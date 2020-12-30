@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+  cvat_db:
+    ports:
+      - '15432:5432'
+
+  cvat:
+    environment:
+      CVAT_SHARE_URL: "Mounted from rockrobo_data"
+      CVAT_POSTGRES_PASSWORD: ${CVAT_POSTGRES_PASSWORD}
+    volumes:
+      - /home/jiangrong/dev/downloads/rockrobo_data:/home/django/share:ro
+
+  cvat_proxy:
+    environment:
+      CVAT_HOST: "192.168.50.153"
+
+  cvat_redis:
+    ports:
+      - '16379:6379'

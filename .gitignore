@@ -4,6 +4,7 @@
 /share/
 /static/
 /db.sqlite3
+/dump.rdb
 /.env
 /keys
 /logs
@@ -34,3 +35,9 @@ yarn-error.log*
 #Ignore Cypress tests temp files
 /tests/cypress/fixtures
 /tests/cypress/screenshots
+
+# Ignore some rockrobo settings
+/rockrobo/*.log
+/rockrobo/.bashrc-dev
+/rockrobo/.bashrc-prod
+/rockrobo/manual.sh

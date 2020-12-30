@@ -51,7 +51,7 @@ export interface ProjectsState {
 }
 
 export interface TasksQuery {
-    page: number;
+    page: number | null;
     id: number | null;
     search: string | null;
     owner: string | null;

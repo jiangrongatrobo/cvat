@@ -200,6 +200,9 @@
             const searchParams = new URLSearchParams();
             for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    if (field === 'page') {
+                        searchParams.set('page_size', 10);
+                    }
                     searchParams.set(field, filter[field]);
                 }
             }

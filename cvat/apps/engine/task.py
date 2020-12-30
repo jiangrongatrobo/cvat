@@ -220,7 +220,22 @@ def _create_thread(tid, data):
         raise NotImplementedError("Adding more data is not implemented")
 
     upload_dir = db_data.get_upload_dirname()
+    ############ hacking for tasks merge process ###########
+    if data['tasks_to_merge']:
+        sorted_tasks = [int(each) for each in data['tasks_to_merge']]
+        sorted_tasks.sort()
+        src_images_path=[]
+        for src_tid in sorted_tasks:
+            src_db_task = models.Task.objects.select_for_update().get(pk=src_tid)
+            base_dir = src_db_task.data.get_upload_dirname()
+            for each_image in list(src_db_task.data.images.all()):
+                src_images_path.append(os.path.join(base_dir, each_image.path))
 
+        from shutil import copy2
+        _ = [copy2(each, upload_dir) for each in src_images_path]
+        data['client_files'] = [each for each in os.listdir(upload_dir)]
+        slogger.glob.info("Merging tasks ID: {}".format(','.join([str(each) for each in sorted_tasks])))
+    ############# hacking end #############
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 

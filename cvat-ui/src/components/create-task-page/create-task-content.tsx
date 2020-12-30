@@ -246,7 +246,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
-                <Text className='cvat-text-color'>Select files:</Text>
+                <Text className='cvat-text-color'>Select files / tasks:</Text>
                 <ConnectedFileManager
                     onChangeActiveKey={this.changeFileManagerTab}
                     ref={(container: any): void => {

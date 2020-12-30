@@ -5,15 +5,25 @@
 import './styles.scss';
 import React, { ReactText } from 'react';
 import Tabs from 'antd/lib/tabs';
+import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
+// import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined } from '@ant-design/icons';
+
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import { Checkbox, Divider } from 'antd';
+const CheckboxGroup = Checkbox.Group;
+import { CheckboxValueType } from 'antd/lib/checkbox/Group';
+
+import { Task, TasksQuery } from 'reducers/interfaces';
+import Spin from 'antd/lib/spin';
 
 import consts from 'consts';
 
@@ -21,12 +31,14 @@ export interface Files {
     local: File[];
     share: string[];
     remote: string[];
+    tasks: string[];
 }
 
 interface State {
     files: Files;
     expandedKeys: string[];
-    active: 'local' | 'share' | 'remote';
+    active: 'local' | 'share' | 'remote' | 'tasks';
+    first_time_switch_tasktab: boolean;
 }
 
 interface Props {
@@ -34,6 +46,13 @@ interface Props {
     treeData: TreeNodeNormal[];
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
+
+    tasks: Task[];
+    fetching: boolean;
+    updating: boolean;
+    getTasks: (query: TasksQuery) => void;
+    currentTasksIndexes: number[];
+
 }
 
 export default class FileManager extends React.PureComponent<Props, State> {
@@ -45,9 +64,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                tasks: [],
             },
             expandedKeys: [],
             active: 'local',
+            first_time_switch_tasktab: true,
         };
 
         this.loadData('/');
@@ -59,6 +80,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
             local: active === 'local' ? files.local : [],
             share: active === 'share' ? files.share : [],
             remote: active === 'remote' ? files.remote : [],
+            tasks: active === 'tasks' ? files.tasks : [],
         };
     }
 
@@ -79,7 +101,9 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                tasks: [],
             },
+            first_time_switch_tasktab: true,
         });
     }
 
@@ -220,8 +244,34 @@ export default class FileManager extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderTasksSelector(): JSX.Element {
+        const { files } = this.state;
+        const { fetching, currentTasksIndexes } = this.props;
+
+        const onChange = (rawList: CheckboxValueType[]) => {
+            let list = (rawList as string[]);
+            this.setState({
+                files: {
+                    ...files,
+                    tasks: list,
+                },
+            });
+        };
+        if (fetching) {
+            return <Spin size='large' className='cvat-spinner' />;
+        } else {
+            return (
+                <div className='cvat-picked-tasks'>
+                    <Divider>选择已经完成的Task来合并</Divider>
+                    <CheckboxGroup options={this.props.currentTasksIndexes.map((taskId): string => taskId.toString())} value={this.state.files.tasks} onChange={onChange} />
+                </div>
+            );
+        }
+
+    }
+
     public render(): JSX.Element {
-        const { withRemote, onChangeActiveKey } = this.props;
+        const { withRemote, getTasks, fetching, onChangeActiveKey } = this.props;
         const { active } = this.state;
 
         return (
@@ -235,11 +285,33 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         this.setState({
                             active: activeKey as any,
                         });
+                        if (activeKey === "tasks" && this.state.first_time_switch_tasktab) {
+                            if (!fetching) {
+                                getTasks({
+                                    page: null,
+                                    id: null,
+                                    search: null,
+                                    owner: null,
+                                    assignee: null,
+                                    name: null,
+                                    status: 'completed',
+                                    mode: null,
+                                });
+                                this.setState({
+                                    first_time_switch_tasktab: false,
+                                })
+                            };
+                        }
                     }}
                 >
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {withRemote && this.renderRemoteSelector()}
+
+                    <Tabs.TabPane key='tasks' tab='Completed tasks'>
+                        {this.renderTasksSelector()}
+                    </Tabs.TabPane>
+
                 </Tabs>
             </>
         );
