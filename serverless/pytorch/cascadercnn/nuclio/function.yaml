@@ -76,7 +76,7 @@ spec:
         - kind: RUN
           value: "pip install --no-cache-dir --user mmcv-full==1.1.2+torch1.5.0+cu101 -f https://download.openmmlab.com/mmcv/dist/index.html"
         - kind: RUN
-          value: "git clone https://wwiwush:55b436525a147ce3750acf1e7e213b36547e08e9@github.com/JIEMIN1995/mmdetection-2.4.git && cd mmdetection-2.4 && pip install -v -e ."
+          value: "git clone https://github.com/JIEMIN1995/mmdetection-2.4.git && cd mmdetection-2.4 && pip install -v -e ."
 
 
   triggers:
