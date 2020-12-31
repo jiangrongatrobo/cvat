@@ -477,7 +477,7 @@ class LambdaJob:
         db_task = TaskModel.objects.get(pk=task)
         if cleanup:
             dm.task.delete_task_data(db_task.id)
-        db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
+        db_labels = (db_task.project if db_task.project_id else db_task).label_set.all().prefetch_related('attributespec_set').order_by('pk')
         labels = {db_label.name:db_label.id for db_label in db_labels}
 
         if function.kind == LambdaType.DETECTOR:

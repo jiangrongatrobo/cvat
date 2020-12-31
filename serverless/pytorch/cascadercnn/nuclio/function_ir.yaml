@@ -1,0 +1,94 @@
+metadata:
+  name: pytorch-cascadercnn-on-mmdetection-ir
+  namespace: cvat
+  annotations:
+    name: cascadercnn based on mmdetection and ir data
+    type: detector
+    spec:
+    framework: pytorch
+    spec: |
+      [
+        {"id": 1, "name": "wire"},
+        {"id": 2, "name": "pet feces"},
+        {"id": 3, "name": "shoe"},
+        {"id": 4, "name": "bar stool a"},
+        {"id": 5, "name": "fan"},
+        {"id": 6, "name": "power strip"},
+        {"id": 7, "name": "dock(ruby)_ir"},
+        {"id": 8, "name": "dock(rubys+tanosv)_ir"},
+        {"id": 9, "name": "bar stool b"},
+        {"id": 10, "name": "scale"},
+        {"id": 11, "name": "clothing item"},
+        {"id": 12, "name": "cleaning robot"},
+        {"id": 13, "name": "fan b"},
+        {"id": 14, "name": "door mark a"},
+        {"id": 15, "name": "door mark b"},
+        {"id": 16, "name": "wheel"},
+        {"id": 17, "name": "door mark c"},
+        {"id": 18, "name": "flat base"},
+        {"id": 19, "name": "whole fan"},
+        {"id": 20, "name": "whole fan b"},
+        {"id": 21, "name": "whole bar stool a"},
+        {"id": 22, "name": "whole bar stool b"},
+        {"id": 23, "name": "fake poop a"},
+        {"id": 24, "name": "fake poop b"},
+        {"id": 25, "name": "dust pan"},
+        {"id": 26, "name": "folding chair"},
+        {"id": 27, "name": "laundry basket"},
+        {"id": 28, "name": "sock"},
+        {"id": 29, "name": "handheld cleaner"}
+      ]
+
+spec:
+  description: cascadercnn created by mmdetection framework trained on 29 classes ir data
+  runtime: 'python:3.7'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: cascadeRCNNConfig
+      value: './mmdetection-2.4/configs/SOTA/cascade_rcnn_r2_101_fpn_dconv_c3-c5_1x_det_ir.py'
+    - name: cascadeRCNNModel
+      value: './cascade_rcnn_r2_101_fpn_dconv_det_ir_73.2.pth'
+    - name: cascadeRCNNDevice
+      value: 'cuda:0'
+    - name: is_ir
+      value: '1'
+
+  build:
+    image: cvat/cascadercnn-mmdetection-ir-29:devel1.0
+    # baseImage: centernet-serverless:v0.1
+    baseImage: pytorch/pytorch:1.5-cuda10.1-cudnn7-devel
+
+    directives:
+      preCopy:
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+      postCopy:
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: "rm -rf /etc/apt/sources.list.d/cuda* && rm -rf /etc/apt/sources.list.d/nvidia-ml* && apt-get update && apt-get install -y --no-install-recommends build-essential git libglib2.0-dev libfreetype6-dev libpng-dev libzmq3-dev libsm6 libxrender1 libxext-dev"
+        - kind: RUN
+          value: "pip install --no-cache-dir --user -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com numpy==1.17 torchvision==0.6.0 pascal_voc_writer opencv-contrib-python==3.4.2.17 opencv-python==3.4.2.17 Pillow==6.2.0 progressbar2 matplotlib requests cython beautifulsoup4 terminaltables six mmpycocotools"
+        - kind: RUN
+          value: "pip install --no-cache-dir --user git+https://github.com/open-mmlab/cocoapi.git#subdirectory=pycocotools"
+        - kind: RUN
+          value: "pip install --no-cache-dir --user mmcv-full==1.1.2+torch1.5.0+cu101 -f https://download.openmmlab.com/mmcv/dist/index.html"
+        - kind: RUN
+          value: "git clone https://wwiwush:55b436525a147ce3750acf1e7e213b36547e08e9@github.com/JIEMIN1995/mmdetection-2.4.git && cd mmdetection-2.4 && pip install -v -e ."
+
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
