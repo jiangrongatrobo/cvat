@@ -53,6 +53,7 @@ const defaultState = {
         local: [],
         share: [],
         remote: [],
+        tasks: [],
     },
     activeFileManagerTab: 'local',
 };
@@ -156,7 +157,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         if (!this.validateFiles()) {
             notification.error({
                 message: 'Could not create a task',
-                description: 'A task must contain at least one file',
+                description: 'A task must contain at least one file or one chosen task',
             });
             return;
         }

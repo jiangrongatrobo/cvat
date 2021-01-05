@@ -12,7 +12,7 @@ services:
       args:
         ELK_VERSION: 6.4.0
     volumes:
-      - cvat_events:/usr/share/elasticsearch/data
+      - /app/cvat/assets/cvat_events:/usr/share/elasticsearch/data
     restart: always
 
   cvat_kibana:
@@ -81,5 +81,3 @@ services:
       CVAT_ANALYTICS: 1
       no_proxy: kibana,logstash,nuclio,${no_proxy}
 
-volumes:
-  cvat_events:

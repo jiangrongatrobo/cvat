@@ -17,9 +17,11 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_DB: cvat
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '15432:5432'
     volumes:
-      - cvat_db:/var/lib/postgresql/data
+      - /app/cvat/assets/cvat_db:/var/lib/postgresql/data
 
   cvat_redis:
     container_name: cvat_redis
@@ -53,11 +55,15 @@ services:
       ALLOWED_HOSTS: '*'
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_POSTGRES_DBNAME: 'cvat'
+      CVAT_POSTGRES_USER: 'root'
+      CVAT_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      CVAT_NUCLIO_HOST: ${CVAT_NUCLIO_HOST}
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
-      - cvat_models:/home/django/models
+      - /app/cvat/assets/cvat_data:/home/django/data
+      - /app/cvat/assets/cvat_keys:/home/django/keys
+      - /app/cvat/assets/cvat_logs:/home/django/logs
+      - /app/cvat/assets/cvat_models:/home/django/models
 
   cvat_ui:
     container_name: cvat_ui
@@ -101,10 +107,3 @@ networks:
       driver: default
       config:
         - subnet: 172.28.0.0/24
-
-volumes:
-  cvat_db:
-  cvat_data:
-  cvat_keys:
-  cvat_logs:
-  cvat_models:

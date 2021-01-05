@@ -59,44 +59,22 @@ class CLI():
             response = self.session.get(url)
             response.raise_for_status()
 
+
+
     def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
                      completion_verification_period=20, lambda_setting={}, **kwargs):
-        """ Create a new task with the given name and labels JSON and
-        add the files to it. """
-        url = self.api.tasks
-        data = {'name': name,
-                'labels': labels,
-                'overlap': overlap,
-                'segment_size': segment_size,
-                'bug_tracker': bug,
-                'assignee_id': kwargs['assignee_id'] if kwargs.get('assignee_id') else None,
-        }
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
-        response_json = response.json()
-        log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
-        task_id = response_json['id']
-        self.tasks_data(task_id, resource_type, resources)
-
-        # check data is ready
-        pass_flg = 0
-        while not pass_flg:
-            sleep(2)
-            task_status = self.session.get(self.api.tasks_id_status(task_id)).json().get('state', 'unknown')
-            data_id = self.session.get(self.api.tasks_id(task_id)).json().get('data', 'unknown')
-            if task_status == "Finished" and data_id != "unknown":
-                print("Data id of task {} is {}".format(task_id, data_id))
-                pass_flg = 1
-            elif task_status == "Failed":
-                print("Task {} failed".format(task_id))
-                pass_flg = 1
-
-        if annotation_path != '':
+        """
+        create task pipeline:
+            - create task meta data
+            - upload task dataset
+            - upload task annotations (optional)
+            - kick off automatic annotator (optional)
+        """
+        def _awaiting_data_compression():
             url = self.api.tasks_id_status(task_id)
             response = self.session.get(url)
             response_json = response.json()
-
             log.info('Awaiting data compression before uploading annotations...')
             while response_json['state'] != 'Finished':
                 sleep(completion_verification_period)
@@ -107,9 +85,32 @@ class CLI():
                                                             response_json['state'],
                                                             response_json['message'])
                 log.info(logger_string)
+            return
 
+        url = self.api.tasks
+        data = {'name': name,
+                'labels': labels,
+                'overlap': overlap,
+                'segment_size': segment_size,
+                'bug_tracker': bug,
+                'assignee_id': kwargs['assignee_id'] if kwargs.get('assignee_id') else None,
+        }
+        ######### create task meta data ########
+        response = self.session.post(url, json=data)
+        response.raise_for_status()
+        response_json = response.json()
+        log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
+        task_id = response_json['id']
+
+        ########## upload task data ############
+        self.tasks_data(task_id, resource_type, resources)
+        _awaiting_data_compression()
+
+        ########## upload task annotations #########
+        if annotation_path != '':
             self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
 
+        ######## kick off automatic annotator #########
         if lambda_setting.get('task'):
             lambda_setting['task'] = task_id
             lambda_response = self.session.post(self.api.lambda_request, json=lambda_setting)

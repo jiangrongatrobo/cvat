@@ -998,6 +998,7 @@
                 server_files: [],
                 client_files: [],
                 remote_files: [],
+                tasks_to_merge: [],
             });
 
             if (Array.isArray(initialData.segments)) {
@@ -1375,6 +1376,34 @@
                             }
 
                             Array.prototype.push.apply(data.files.remote_files, remoteFiles);
+                        },
+                    },
+                    /**
+                     * List of files from existing tasks
+                     * @name tasksToMerge
+                     * @type {File[]}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    tasksToMerge: {
+                        get: () => [...data.files.tasks_to_merge],
+                        set: (tasksToMerge) => {
+                            if (!Array.isArray(tasksToMerge)) {
+                                throw new ArgumentError(
+                                    `Value must be an array. But ${typeof tasksToMerge} has been got.`,
+                                );
+                            }
+
+                            for (const value of tasksToMerge) {
+                                if (typeof value !== 'string') {
+                                    throw new ArgumentError(
+                                        `Array values must be a string. But ${typeof value} has been got.`,
+                                    );
+                                }
+                            }
+
+                            Array.prototype.push.apply(data.files.tasks_to_merge, tasksToMerge);
                         },
                     },
                     /**
@@ -1908,6 +1937,7 @@
             client_files: this.clientFiles,
             server_files: this.serverFiles,
             remote_files: this.remoteFiles,
+            tasks_to_merge: this.tasksToMerge,
             image_quality: this.imageQuality,
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,

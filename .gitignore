@@ -41,3 +41,5 @@ yarn-error.log*
 /rockrobo/.bashrc-dev
 /rockrobo/.bashrc-prod
 /rockrobo/manual.sh
+/cvat/settings/rockrobo.py
+/cvat-ui/webpack.config.rockrobo.js

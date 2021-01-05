@@ -213,7 +213,7 @@ class LambdaFunction:
 class LambdaQueue:
     def _get_queue(self):
         QUEUE_NAME = "low"
-        return django_rq.get_queue(QUEUE_NAME)
+        return django_rq.get_queue(QUEUE_NAME,is_async=True) # set is_async=False to debug.
 
     def get_jobs(self):
         queue = self._get_queue()
@@ -477,7 +477,7 @@ class LambdaJob:
         db_task = TaskModel.objects.get(pk=task)
         if cleanup:
             dm.task.delete_task_data(db_task.id)
-        db_labels = (db_task.project if db_task.project_id else db_task).label_set.all().prefetch_related('attributespec_set').order_by('pk')
+        db_labels = (db_task.project if db_task.project_id else db_task).label_set.all().prefetch_related('attributespec_set').all()
         labels = {db_label.name:db_label.id for db_label in db_labels}
 
         if function.kind == LambdaType.DETECTOR:

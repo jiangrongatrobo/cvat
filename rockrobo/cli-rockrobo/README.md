@@ -1,17 +1,9 @@
-# Command line interface (CLI)
+# Rockrobo customized
 
 **Description**
 A simple command line interface for working with CVAT tasks. At the moment it
 implements a basic feature set but may serve as the starting point for a more
 comprehensive CVAT administration tool in the future.
-
-Overview of functionality:
-
-- Create a new task (supports name, bug tracker, labels JSON, local/share/remote files)
-- Delete tasks (supports deleting a list of task IDs)
-- List all tasks (supports basic CSV or JSON output)
-- Download JPEG frames (supports a list of frame IDs)
-- Dump annotations (supports all formats via format string)
 
 **Usage**
 
@@ -41,10 +33,42 @@ optional arguments:
 **Examples**
 
 - List all tasks
-  `cli.py ls`
+  ```
+  python ./cli.py \
+    --auth root:rockrobo \
+    --server-host localhost \
+    --server-port 7000 \
+    ls
+  ```
+
 - Create a task
-  `cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
+  ```
+  python ./cli.py \
+    --auth root:rockrobo \
+    --server-host localhost \
+    --server-port 7000 \
+    create task-from-cli \
+    --labels ./assets/baiguang-labels.json \
+    local ./assets/test-images-dir
+  ```
+
 - Delete some tasks
-  `cli.py delete 100 101 102`
+  ```
+  python ./cli.py \
+    --auth root:rockrobo \
+    --server-host localhost \
+    --server-port 7000 \
+    delete 5
+  ```
+
 - Dump annotations
-  `cli.py dump --format "CVAT for images 1.1" 103 output.xml`
+  ```
+  python ./cli.py \
+    --auth root:rockrobo \
+    --server-host localhost \
+    --server-port 7000 \
+    dump \
+    --format "CVAT for images 1.1" \
+    4 \
+    ./output.xml
+  ```

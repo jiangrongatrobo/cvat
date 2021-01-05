@@ -13,11 +13,13 @@ from traceback import print_exception
 from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
+from shutil import copy2
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
+import cvat.apps.dataset_manager as dm
 
 import django_rq
 from django.conf import settings
@@ -31,9 +33,10 @@ from .log import slogger
 
 def create(tid, data):
     """Schedule the task"""
-    q = django_rq.get_queue('default')
+    q = django_rq.get_queue(
+        'default', is_async=True)  # set is_async=False to debug.
     q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id="/api/v1/tasks/{}".format(tid))
+                   job_id="/api/v1/tasks/{}".format(tid))
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
@@ -126,7 +129,7 @@ def _count_files(data, meta_info_file=None):
     # the example above only 2.txt and 1.txt files will be in the final list.
     # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
     data['server_files'] = [v[1] for v in zip([""] + server_files, server_files)
-        if not os.path.dirname(v[0]).startswith(v[1])]
+                            if not os.path.dirname(v[0]).startswith(v[1])]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
@@ -137,7 +140,7 @@ def _count_files(data, meta_info_file=None):
                 meta_info_file.append(rel_path)
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
-                    "correspond to a video or an image file)".format(full_path))
+                                  "correspond to a video or an image file)".format(full_path))
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
 
@@ -226,12 +229,17 @@ def _create_thread(tid, data):
         sorted_tasks.sort()
         src_images_path=[]
         for src_tid in sorted_tasks:
-            src_db_task = models.Task.objects.select_for_update().get(pk=src_tid)
+            # fetch frame id of images tagged as 'pick'
+            picked_frames = set([each['frame'] for each in dm.task.get_task_data(src_tid)['tags'] \
+                                    if models.Label.objects.get(pk=each['label_id']).name == 'pick'])
+
+            src_db_task = models.Task.objects.get(pk=src_tid)
             base_dir = src_db_task.data.get_upload_dirname()
             for each_image in list(src_db_task.data.images.all()):
-                src_images_path.append(os.path.join(base_dir, each_image.path))
+                if each_image.frame in picked_frames:
+                    src_images_path.append(
+                        os.path.join(base_dir, each_image.path))
 
-        from shutil import copy2
         _ = [copy2(each, upload_dir) for each in src_images_path]
         data['client_files'] = [each for each in os.listdir(upload_dir)]
         slogger.glob.info("Merging tasks ID: {}".format(','.join([str(each) for each in sorted_tasks])))
@@ -314,7 +322,7 @@ def _create_thread(tid, data):
     video_size = (0, 0)
 
     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-       for media_type, media_files in media.items():
+        for media_type, media_files in media.items():
 
             if not media_files:
                 continue
@@ -378,8 +386,8 @@ def _create_thread(tid, data):
 
                     db_images.extend([
                         models.Image(data=db_data,
-                            path=os.path.relpath(path, upload_dir),
-                            frame=frame, width=w, height=h)
+                                     path=os.path.relpath(path, upload_dir),
+                                     frame=frame, width=w, height=h)
                         for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
                     ])
 
