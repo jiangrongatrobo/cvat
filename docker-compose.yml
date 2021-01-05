@@ -31,6 +31,8 @@ services:
         aliases:
           - redis
     restart: always
+    ports:
+      - '16379:6379'
 
   cvat:
     container_name: cvat
@@ -59,11 +61,14 @@ services:
       CVAT_POSTGRES_USER: 'root'
       CVAT_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       CVAT_NUCLIO_HOST: ${CVAT_NUCLIO_HOST}
+      CVAT_SHARE_URL: "Mounted from roborock_data"
+      CVAT_SERVERLESS: 1
     volumes:
       - /app/cvat/assets/cvat_data:/home/django/data
       - /app/cvat/assets/cvat_keys:/home/django/keys
       - /app/cvat/assets/cvat_logs:/home/django/logs
       - /app/cvat/assets/cvat_models:/home/django/models
+      - /app/cvat/assets/roborock_data:/home/django/share:ro
 
   cvat_ui:
     container_name: cvat_ui
@@ -93,7 +98,7 @@ services:
       - cvat
       - cvat_ui
     environment:
-      CVAT_HOST: localhost
+      CVAT_HOST: ${CVAT_HOST}
     ports:
       - '8080:80'
     volumes:
