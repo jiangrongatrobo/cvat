@@ -267,6 +267,32 @@ dump_parser.add_argument(
 )
 
 #######################################################################
+# Export
+#######################################################################
+
+export_parser = task_subparser.add_parser(
+    'export',
+    description='Download data and annotations for a CVAT task.'
+)
+export_parser.add_argument(
+    'task_id',
+    type=int,
+    help='task ID'
+)
+export_parser.add_argument(
+    'filename',
+    type=str,
+    help='output file'
+)
+export_parser.add_argument(
+    '--format',
+    dest='fileformat',
+    type=str,
+    default='CVAT for images 1.1',
+    help='annotation format (default: %(default)s)'
+)
+
+#######################################################################
 # Upload Annotations
 #######################################################################
 

@@ -1026,7 +1026,7 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    queue = django_rq.get_queue("default", is_async=True)  # set is_async=False to debug.
 
     rq_job = queue.fetch_job(rq_id)
     if rq_job:

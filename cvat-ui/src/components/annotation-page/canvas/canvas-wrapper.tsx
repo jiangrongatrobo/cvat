@@ -185,7 +185,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.activate(null);
             const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
             if (el) {
-                (el as any).instance.fill({ opacity: opacity / 100 });
+                const [blackBoxFlg] = annotations.filter((state: any): boolean => {
+                    if (state.clientID === prevProps.activatedStateID && state.label.name === 'black-box'){
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+                if (! blackBoxFlg) {
+                    (el as any).instance.fill({ opacity: opacity / 100 });
+                };
             }
         }
 
@@ -604,7 +613,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
             if (el) {
-                ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);
+                const [blackBoxFlg] = annotations.filter((state: any): boolean => {
+                    if (state.clientID === activatedStateID && state.label.name === 'black-box'){
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+                if (! blackBoxFlg) {
+                    ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity / 100}`);
+                }
+
             }
         }
     }
@@ -632,8 +651,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 if (handler && handler.nested) {
                     handler.nested.fill({ color: shapeColor });
                 }
-
-                (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                if (state.label.name === 'black-box') {
+                    (shapeView as any).instance.fill({ color: shapeColor, opacity: 1 });
+                } else {
+                    (shapeView as any).instance.fill({ color: shapeColor, opacity: opacity / 100 });
+                }
                 (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }

@@ -136,13 +136,14 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     </p>
                     <p className='ant-upload-text'>Click or drag files to this area</p>
                     <p className='ant-upload-hint'>Support for a bulk images or a single video</p>
+                    <Text className='cvat-text-color'>{`${files.local.length} files selected`}</Text>
                 </Upload.Dragger>
                 {files.local.length >= 5 && (
                     <>
                         <br />
                         <Text className='cvat-text-color'>{`${files.local.length} files selected`}</Text>
                     </>
-                )}
+                 )}
             </Tabs.TabPane>
         );
     }

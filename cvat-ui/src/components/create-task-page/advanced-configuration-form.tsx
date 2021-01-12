@@ -35,7 +35,7 @@ const initialValues: AdvancedConfiguration = {
     lfs: false,
     useZipChunks: true,
     useCache: true,
-    copyData: false,
+    copyData: true,
 };
 
 interface Props {

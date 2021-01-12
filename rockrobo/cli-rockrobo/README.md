@@ -68,7 +68,19 @@ optional arguments:
     --server-host localhost \
     --server-port 7000 \
     dump \
-    --format "CVAT for images 1.1" \
-    4 \
-    ./output.xml
+    --format "PASCAL VOC 1.1" \
+    61 \
+    ./pascal-voc.zip
+  ```
+
+- Export dataset
+  ```
+  python ./cli.py \
+    --auth root:rockrobo \
+    --server-host localhost \
+    --server-port 7000 \
+    export \
+    --format "PASCAL VOC 1.1" \
+    61 \
+    ./pascal-voc.zip
   ```

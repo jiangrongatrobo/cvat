@@ -264,7 +264,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { activeFileManagerTab } = this.state;
         return (
             <Col span={24}>
-                <Collapse>
+                <Collapse defaultActiveKey={['1']}>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             installedGit={installedGit}

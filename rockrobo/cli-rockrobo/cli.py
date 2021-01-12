@@ -24,6 +24,7 @@ def main():
                'ls': CLI.tasks_list,
                'frames': CLI.tasks_frame,
                'dump': CLI.tasks_dump,
+               'export': CLI.tasks_export,
                'upload': CLI.tasks_upload}
     args = parser.parse_args()
     config_log(args.loglevel)

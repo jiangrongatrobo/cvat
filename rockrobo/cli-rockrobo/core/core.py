@@ -176,6 +176,30 @@ class CLI():
         with open(filename, 'wb') as fp:
             fp.write(response.content)
 
+    def tasks_export(self, task_id, fileformat, filename, **kwargs):
+        """ Download images and annotations for a task in the specified format
+        (e.g. 'YOLO ZIP 1.0')."""
+        url = self.api.tasks_id(task_id)
+        response = self.session.get(url)
+        response.raise_for_status()
+        response_json = response.json()
+
+        url = self.api.tasks_id_dataset_filename(task_id,
+                                                response_json['name'],
+                                                fileformat)
+        while True:
+            response = self.session.get(url)
+            response.raise_for_status()
+            log.info('STATUS {}'.format(response.status_code))
+            if response.status_code == 201:
+                break
+
+        response = self.session.get(url + '&action=download')
+        response.raise_for_status()
+
+        with open(filename, 'wb') as fp:
+            fp.write(response.content)
+
     def tasks_upload(self, task_id, fileformat, filename, **kwargs):
         """ Upload annotations for a task in the specified format
         (e.g. 'YOLO ZIP 1.0')."""
@@ -239,6 +263,10 @@ class CVAT_API_V1():
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations?format={}&filename={}' \
+            .format(fileformat, name)
+
+    def tasks_id_dataset_filename(self, task_id, name, fileformat):
+        return self.tasks_id(task_id) + '/dataset?format={}&filename={}' \
             .format(fileformat, name)
 
     @property

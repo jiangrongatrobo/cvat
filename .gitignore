@@ -41,5 +41,7 @@ yarn-error.log*
 /rockrobo/.bashrc-dev
 /rockrobo/.bashrc-prod
 /rockrobo/manual.sh
+/rockrobo/assets
 /cvat/settings/rockrobo.py
 /cvat-ui/webpack.config.rockrobo.js
+/rockrobo/migrate-legancy/tanosv/annotations
