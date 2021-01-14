@@ -20,10 +20,11 @@ from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoi
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
 import cvat.apps.dataset_manager as dm
+from cvat.apps.engine.serializers import LabeledDataSerializer
 
 import django_rq
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from distutils.dir_util import copy_tree
 
 from . import models
@@ -227,21 +228,27 @@ def _create_thread(tid, data):
     if data['tasks_to_merge']:
         sorted_tasks = [int(each) for each in data['tasks_to_merge']]
         sorted_tasks.sort()
-        src_images_path=[]
+        src_task_annotations_dict = {} # {src_tid: {"tags":[{"frame":}], "shapes":[{"frame":}]}}
+        tgt_images_dict = {} # {tgt_name: (src_path, src_tid, src_frame, tgt_path)}
         for src_tid in sorted_tasks:
-            # fetch frame id of images tagged as 'pick'
-            picked_frames = set([each['frame'] for each in dm.task.get_task_data(src_tid)['tags'] \
-                                    if models.Label.objects.get(pk=each['label_id']).name == 'pick'])
-
+            src_task_annotations_dict[src_tid] = dm.task.get_task_data(src_tid)
             src_db_task = models.Task.objects.get(pk=src_tid)
             base_dir = src_db_task.data.get_upload_dirname()
             for each_image in list(src_db_task.data.images.all()):
-                if each_image.frame in picked_frames:
-                    src_images_path.append(
-                        os.path.join(base_dir, each_image.path))
+                src_name = each_image.path
+                src_frame = each_image.frame
+                src_path = os.path.join(base_dir, src_name)
+                tgt_name = os.path.basename(src_name)
+                if tgt_images_dict.get(tgt_name):
+                    tgt_name = "dup_{}_".format(src_tid) + tgt_name
+                tgt_path = os.path.join(upload_dir, tgt_name)
+                _ = copy2(src_path, tgt_path)
+                tgt_images_dict[tgt_name] = (src_path
+                                                    , src_tid
+                                                    , src_frame
+                                                    , tgt_path)
 
-        _ = [copy2(each, upload_dir) for each in src_images_path]
-        data['client_files'] = [each for each in os.listdir(upload_dir)]
+        data['client_files'] = list(tgt_images_dict.keys())
         slogger.glob.info("Merging tasks ID: {}".format(','.join([str(each) for each in sorted_tasks])))
     ############# hacking end #############
     if data['remote_files']:
@@ -438,3 +445,38 @@ def _create_thread(tid, data):
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)
+
+    ############ hacking for tasks merge process ###########
+    if data['tasks_to_merge']:
+        tgt_db_task = models.Task.objects.get(pk=tid)
+        src2tgt_frame_map = {} # {src_tid: {src_frame: tgt_frame}}
+        for each_image in tgt_db_task.data.images.all():
+            tgt_name = each_image.path
+            tgt_frame = each_image.frame
+            # tgt_images_dict = {} # {tgt_name: (src_path, src_tid, src_frame, tgt_path)}
+            src_tid = tgt_images_dict[tgt_name][1]
+            src_frame = tgt_images_dict[tgt_name][2]
+            if src2tgt_frame_map.get(src_tid):
+                src2tgt_frame_map[src_tid][src_frame] = tgt_frame
+            else:
+                src2tgt_frame_map[src_tid] = {src_frame:tgt_frame}
+
+        # src_task_annotations_dict = {} # {src_tid: {"tags":[{"frame":}], "shapes":[{"frame":}]}}
+        for src_tid, src_ann in src_task_annotations_dict.items():
+            # only migrate tags and shapes
+            for todo in ['tags', 'shapes']:
+                for block in src_ann[todo]:
+                    block['frame'] = src2tgt_frame_map[src_tid][block['frame']]
+                    block['id'] = None
+            src_ann['tracks'] = []
+
+        for src_tid, src_ann in src_task_annotations_dict.items():
+            serializer = LabeledDataSerializer(data=src_ann)
+            if serializer.is_valid(raise_exception=True):
+                try:
+                    _ = dm.task.patch_task_data(tid, serializer.data, dm.task.PatchAction.CREATE)
+                except (AttributeError, IntegrityError) as e:
+                    err_msg = "error occured during saving merged annotations {}".format(str(e))
+                    slogger.glob.error(err_msg, exc_info=True)
+                    raise Exception(err_msg)
+    ############# hacking end #############

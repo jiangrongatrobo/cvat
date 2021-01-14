@@ -165,7 +165,7 @@ rules.add_perm('engine.role.admin', has_admin_role)
 rules.add_perm('engine.role.annotator', has_annotator_role)
 rules.add_perm('engine.role.observer', has_observer_role)
 
-rules.add_perm('engine.project.create', has_admin_role | has_user_role)
+rules.add_perm('engine.project.create', has_admin_role)
 rules.add_perm('engine.project.access', has_admin_role | has_observer_role |
     is_project_owner | is_project_annotator)
 rules.add_perm('engine.project.change', has_admin_role | is_project_owner |

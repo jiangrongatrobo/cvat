@@ -9,27 +9,25 @@ import { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 
 import { loadShareDataAsync } from 'actions/share-actions';
-import { ShareItem, CombinedState, TasksQuery, Task } from 'reducers/interfaces';
-import { getTasksAsync } from 'actions/tasks-actions';
+import { ShareItem, CombinedState, Task } from 'reducers/interfaces';
+import { getProjectsAsync } from 'actions/projects-actions';
 
 interface OwnProps {
     ref: any;
     withRemote: boolean;
     onChangeActiveKey(key: string): void;
+    projectId: number | null;
 }
 
 interface StateToProps {
     treeData: TreeNodeNormal[];
-    // for "getTasks"
     tasks: Task[];
     fetching: boolean;
-    updating: boolean;
-    currentTasksIndexes: number[];
 }
 
 interface DispatchToProps {
     getTreeData(key: string, success: () => void, failure: () => void): void;
-    getTasks: (query: TasksQuery) => void;
+    getTasks: (projectId: number | null) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -50,15 +48,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     const { root } = state.share;
 
-    const { fetching, updating, current } = state.tasks;
+    const { current } = state.tasks;
+    const { fetching } = state.projects;
 
     return {
         treeData: convert([root], ''),
 
         tasks: current,
         fetching,
-        updating,
-        currentTasksIndexes: current.map((task): number => task.instance.id),
     };
 }
 
@@ -67,9 +64,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         getTreeData: (key: string, success: () => void, failure: () => void): void => {
             dispatch(loadShareDataAsync(key, success, failure));
         },
-        getTasks: (query: TasksQuery): void => {
-            dispatch(getTasksAsync(query));
+        getTasks: (id: number | null): void => {
+            dispatch(
+                getProjectsAsync({
+                    id
+                }),
+            );
         },
+
     };
 }
 
@@ -87,7 +89,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { treeData, getTreeData, withRemote, tasks, fetching, updating, getTasks, currentTasksIndexes, onChangeActiveKey } = this.props;
+        const { treeData, getTreeData, withRemote, tasks, onChangeActiveKey, projectId, fetching, getTasks } = this.props;
 
         return (
             <FileManagerComponent
@@ -101,9 +103,8 @@ export class FileManagerContainer extends React.PureComponent<Props> {
 
                 tasks={tasks}
                 fetching={fetching}
-                updating={updating}
                 getTasks={getTasks}
-                currentTasksIndexes={currentTasksIndexes}
+                projectId={projectId}
             />
         );
     }

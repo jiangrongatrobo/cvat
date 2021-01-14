@@ -167,7 +167,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 name='copyData'
                 valuePropName='checked'
             >
-                <Checkbox>
+                <Checkbox disabled>
                     <Text className='cvat-text-color'>Copy data into CVAT</Text>
                 </Checkbox>
             </Form.Item>

@@ -977,7 +977,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    queue = django_rq.get_queue("default",is_async=True)  # set is_async=False to debug.
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:

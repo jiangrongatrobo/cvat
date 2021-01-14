@@ -244,6 +244,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderFilesBlock(): JSX.Element {
+        const { projectId } = this.state;
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
@@ -254,6 +255,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         this.fileManagerContainer = container;
                     }}
                     withRemote
+                    projectId={projectId}
                 />
             </Col>
         );
