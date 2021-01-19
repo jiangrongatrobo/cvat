@@ -19,8 +19,8 @@ services:
     ports:
       - '8070:8070'
 
-  cvat:
-    environment:
-      CVAT_SERVERLESS: 1
-      no_proxy: kibana,logstash,nuclio,${no_proxy}
+  # cvat:
+  #   environment:
+  #     CVAT_SERVERLESS: 1
+  #     no_proxy: kibana,logstash,nuclio,${no_proxy}
 

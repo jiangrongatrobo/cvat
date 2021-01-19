@@ -1,0 +1,89 @@
+metadata:
+  name: pytorch-yolov5l-ir-34
+  namespace: cvat
+  annotations:
+    name: yolov5l with ir 34 classes
+    type: detector
+    spec:
+    framework: pytorch
+    spec: |
+      [
+        {"id":1,"name": "fake poop b"},
+        {"id":2,"name": "laundry basket"},
+        {"id":3,"name": "folding chair"},
+        {"id":4,"name": "dock(rubys+tanosv)_ir"},
+        {"id":5,"name": "cleaning robot"},
+        {"id":6,"name": "scale"},
+        {"id":7,"name": "whole bar stool b"},
+        {"id":8,"name": "dust pan"},
+        {"id":9,"name": "whole bar stool a"},
+        {"id":10,"name": "shoe"},
+        {"id":11,"name": "fan c"},
+        {"id":12,"name": "flat base"},
+        {"id":13,"name": "floor lamp"},
+        {"id":14,"name": "coat rack"},
+        {"id":15,"name": "pet feces"},
+        {"id":16,"name": "sock"},
+        {"id":17,"name": "handheld cleaner"},
+        {"id":18,"name": "power strip"},
+        {"id":19,"name": "rocking chair"},
+        {"id":20,"name": "bar stool a"},
+        {"id":21,"name": "fan"},
+        {"id":22,"name": "fan b"},
+        {"id":23,"name": "fake poop a"},
+        {"id":24,"name": "whole fan b"},
+        {"id":25,"name": "door mark b"},
+        {"id":26,"name": "door mark c"},
+        {"id":27,"name": "door mark a"},
+        {"id":28,"name": "whole fan c"},
+        {"id":29,"name": "wheel"},
+        {"id":30,"name": "bar stool b"},
+        {"id":31,"name": "dock(ruby)_ir"},
+        {"id":32,"name": "whole fan"},
+        {"id":33,"name": "wire"},
+        {"id":34,"name": "clothing item"}
+      ]
+
+spec:
+  description: yolov5 large model with 34 ir classes trained on CVAT task 47,48
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: WEIGHTS
+      value: /opt/nuclio/ir.pt
+    - name: SPEC
+      value: /opt/nuclio/ir.yaml
+
+  build:
+    image: cvat/pytorch-yolov5l-ir-34
+    baseImage: python:3.8.6
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: apt update && apt install -y screen libgl1-mesa-glx
+        - kind: RUN
+          value: python -m pip install --upgrade pip
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+      postCopy:
+        - kind: RUN
+          value: python -m pip install -r requirements.txt
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3

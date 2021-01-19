@@ -39,6 +39,7 @@
   - [Filter](#filter)
   - [Analytics](#analytics)
   - [Shortcuts](#shortcuts)
+  - [Roborock internal requirements](#roborock-internal-requirements)
 
 # User's guide
 
@@ -1611,3 +1612,30 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Tab`                      | Go to the next annotated object in current frame                                                         |
 | `Shift+Tab`                | Go to the previous annotated object in current frame                                                     |
 | `<number>`                 | Assign a corresponding value to the current attribute                                                    |
+
+
+## Roborock internal requirements
+
+#### 特殊含义标签：
+
+black-box: 涂黑敏感信息
+元数据：
+```
+[
+  {
+    "name": "black-box",
+    "color": "#000000",
+    "attributes": []
+  }
+]
+```
+标注效果：
+![](static/documentation/images/black-box.jpg)
+
+#### 合并同一个Project下Tasks:
+
+在project详情页下发起创建Task，切换到**completed tasks**，这里会显示当前Project中状态是**Completed**的Tasks的ID。
+合并后的Task会包含原有Tasks的图片以及Shapes和Tags的标注。
+如果合并的Tasks中有重名的图片，会在图片前加上前缀**dup_taskID**.
+![](static/documentation/images/merge-tasks.jpg)
+

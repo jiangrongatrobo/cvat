@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
+import os
 from collections import OrderedDict, namedtuple
 from pathlib import Path
+import cv2
 
 from django.utils import timezone
 
@@ -478,6 +480,12 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                         quality=frame_provider.Quality.ORIGINAL,
                         out_type=frame_provider.Type.BUFFER)[0].getvalue()
                     return ByteImage(data=loader, **kwargs)
+            ############## hacking for black-box ##############
+            black_box_id = None
+            for k, v in enumerate(self._categories[datumaro.AnnotationType.label].items):
+                if v.name == 'black-box':
+                    black_box_id = k
+            ############# end hacking #########################
 
         for frame_data in task_data.group_by_frame(include_empty=True):
             image_args = {
@@ -489,6 +497,20 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             else:
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, task_data)
+            ############## hacking for black-box ##############
+            if include_images:
+                black_box_img = None
+                tgt_path = os.path.join(task_data.db_task.data.get_upload_dirname(), "with_black_box_"+dm_image.path)
+                for each_anno in dm_anno:
+                    if each_anno.label == black_box_id:
+                        x1,y1 = int(each_anno.x), int(each_anno.y)
+                        x2,y2 = x1+int(each_anno.w), y1+int(each_anno.h)
+                        if black_box_img is None:
+                            black_box_img = dm_image.data
+                        black_box_img = cv2.rectangle(black_box_img, (x1,y1), (x2,y2), (0,0,0), -1)
+                        cv2.imwrite(tgt_path, black_box_img)
+                        dm_image._path = tgt_path
+            ############## end hacking ########################
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
                 annotations=dm_anno, image=dm_image,
                 attributes={'frame': frame_data.frame})

@@ -321,7 +321,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         )}
                                         <Redirect
                                             push
-                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                            to={new URLSearchParams(location.search).get('next') || '/projects'}
                                         />
                                     </Switch>
                                 </GlobalHotKeys>
