@@ -1639,3 +1639,9 @@ black-box: 涂黑敏感信息
 如果合并的Tasks中有重名的图片，会在图片前加上前缀**dup_taskID**.
 ![](static/documentation/images/merge-tasks.jpg)
 
+
+#### 标注机
+白光34类：yolov5l<br>
+红外34类：yolov5l<br>
+![](static/documentation/images/automatic-annotation-1.jpg)<br>
+![](static/documentation/images/automatic-annotation-2.jpg)
