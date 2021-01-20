@@ -79,6 +79,8 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                 description={(
                     <div className='cvat-porjects-project-item-description'>
                         <div>
+                            <Text type='secondary'>{`Project #${projectInstance.id}`}</Text>
+                            <br />
                             {ownerName && (
                                 <>
                                     <Text type='secondary'>{`Created ${ownerName ? `by ${ownerName}` : ''}`}</Text>

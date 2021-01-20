@@ -239,8 +239,7 @@ def _create_thread(tid, data):
                 src_frame = each_image.frame
                 src_path = os.path.join(base_dir, src_name)
                 tgt_name = os.path.basename(src_name)
-                if tgt_images_dict.get(tgt_name):
-                    tgt_name = "dup_{}_".format(src_tid) + tgt_name
+                tgt_name = "{}__".format(src_tid) + tgt_name
                 tgt_path = os.path.join(upload_dir, tgt_name)
                 _ = copy2(src_path, tgt_path)
                 tgt_images_dict[tgt_name] = (src_path

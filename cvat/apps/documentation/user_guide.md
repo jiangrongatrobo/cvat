@@ -1636,7 +1636,7 @@ black-box: 涂黑敏感信息
 
 在project详情页下发起创建Task，切换到**completed tasks**，这里会显示当前Project中状态是**Completed**的Tasks的ID。
 合并后的Task会包含原有Tasks的图片以及Shapes和Tags的标注。
-如果合并的Tasks中有重名的图片，会在图片前加上前缀**dup_taskID**.
+合并的Tasks会在图片前加上前缀**taskID__**。
 ![](static/documentation/images/merge-tasks.jpg)
 
 
