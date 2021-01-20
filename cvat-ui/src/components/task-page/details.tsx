@@ -169,7 +169,8 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
     private renderDescription(): JSX.Element {
         const { taskInstance, onTaskUpdate } = this.props;
-        const owner = taskInstance.owner ? taskInstance.owner.username : null;
+        const ownerName = taskInstance.owner ? taskInstance.owner.username : null;
+        const owner = taskInstance.owner ? taskInstance.owner : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
         const assigneeSelect = (
@@ -181,17 +182,29 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 }}
             />
         );
-
+        const ownerSelect = (
+            <UserSelector
+                value={owner}
+                onSelect={(value: User | null): void => {
+                    taskInstance.owner = value;
+                    onTaskUpdate(taskInstance);
+                }}
+            />
+        );
         return (
             <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
-                <Col span={12}>
-                    {owner && (
-                        <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
+                <Col span={10}>
+                    {ownerName && (
+                        <Text type='secondary'>{`Task #${taskInstance.id} Created by ${ownerName} on ${created}`}</Text>
                     )}
                 </Col>
-                <Col span={10}>
+                <Col span={6}>
                     <Text type='secondary'>Assigned to</Text>
                     {assigneeSelect}
+                </Col>
+                <Col span={6}>
+                    <Text type='secondary'>Change owner to</Text>
+                    {ownerSelect}
                 </Col>
             </Row>
         );

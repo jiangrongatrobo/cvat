@@ -1108,6 +1108,13 @@
                      */
                     owner: {
                         get: () => data.owner,
+                        set: (owner) => {
+                            if (owner !== null && !(owner instanceof User)) {
+                                throw new ArgumentError('Value must be a user instance');
+                            }
+                            updatedFields.owner = true;
+                            data.owner = owner;
+                        },
                     },
                     /**
                      * Instance of a user who is responsible for the task
@@ -1897,12 +1904,17 @@
                     case 'labels':
                         taskData.labels = [...this.labels.map((el) => el.toJSON())];
                         break;
+                    case 'owner':
+                        if ((this.owner === undefined || this.owner === null)) {
+                            throw new ArgumentError('Owner can not be null.');
+                        }
+                        taskData.owner_id = this.owner.id;
+                        break;
                     default:
                         break;
                     }
                 }
             }
-
             await serverProxy.tasks.saveTask(this.id, taskData);
 
             this.updatedFields = {
@@ -1910,6 +1922,7 @@
                 name: false,
                 bugTracker: false,
                 labels: false,
+                owner: false,
             };
 
             return this;
