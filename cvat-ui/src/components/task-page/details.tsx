@@ -203,7 +203,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     {assigneeSelect}
                 </Col>
                 <Col span={6}>
-                    <Text type='secondary'>Change owner to</Text>
+                    <Text type='secondary'>Owned by</Text>
                     {ownerSelect}
                 </Col>
             </Row>

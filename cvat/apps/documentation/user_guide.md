@@ -1645,3 +1645,9 @@ black-box: 涂黑敏感信息
 红外34类：yolov5l<br>
 ![](static/documentation/images/automatic-annotation-1.jpg)<br>
 ![](static/documentation/images/automatic-annotation-2.jpg)
+
+
+#### 修改Task的Owner
+
+完成标注后，可以把owner修改成admin来锁定任务。<br>
+![](static/documentation/images/change-owner.jpg)
