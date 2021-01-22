@@ -11,6 +11,8 @@ from enum import Enum
 import django_rq
 from django.utils import timezone
 import pandas as pd
+from openpyxl.workbook.child import INVALID_TITLE_REGEX
+import re
 
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import slogger
@@ -137,7 +139,9 @@ def export_project_stats(tasks: list, db_project,  server_url=None):
             struct["Total"][Metrics.Total.name] += 1
 
         struct_df = pd.DataFrame(struct).transpose()
-        struct_df.to_excel(xlsx, sheet_name="#{}_{}".format(tid, tname), index=True)
+        title="#{}_{}".format(tid, tname)
+        title = re.sub(INVALID_TITLE_REGEX, '_', title)
+        struct_df.to_excel(xlsx, sheet_name=title, index=True)
     xlsx.close()
     return output_path
 
