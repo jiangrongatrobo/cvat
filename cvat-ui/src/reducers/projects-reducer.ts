@@ -28,6 +28,7 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        stats: {},
     },
 };
 
@@ -185,6 +186,54 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case ProjectsActionTypes.EXPORT_PROJECT_STAT:{
+            const { projectId } = action.payload;
+            const { stats } = state.activities;
+
+            stats[projectId] = true;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    stats: {
+                        ...stats,
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.EXPORT_PROJECT_STAT_FAILED:{
+            const { projectId } = action.payload;
+            const { stats } = state.activities;
+
+            delete stats[projectId];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    stats: {
+                        ...stats,
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.EXPORT_PROJECT_STAT_SUCCESS:{
+            const { projectId } = action.payload;
+            const { stats } = state.activities;
+
+            delete stats[projectId];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    stats: {
+                        ...stats,
+                    },
+                },
+            };
         }
         default:
             return state;

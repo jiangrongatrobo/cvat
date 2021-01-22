@@ -6,13 +6,15 @@ import os
 import os.path as osp
 import tempfile
 from datetime import timedelta
+from enum import Enum
 
 import django_rq
 from django.utils import timezone
+import pandas as pd
 
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Project, Task
 from datumaro.cli.util import make_file_name
 from datumaro.util import to_snake_case
 
@@ -82,6 +84,62 @@ def export_task(task_id, dst_format, server_url=None, save_images=False):
 
 def export_task_as_dataset(task_id, dst_format=None, server_url=None):
     return export_task(task_id, dst_format, server_url=server_url, save_images=True)
+
+class Metrics(Enum):
+    Rectangle = "Rectangle"
+    Tags = "Tags"
+    Manually = "Manually"
+    Total = "Total"
+    def __str__(self):
+        return self.value
+
+def export_project_stats(tasks: list, db_project,  server_url=None):
+    project_dir = osp.abspath(db_project.get_project_dirname())
+    if osp.isdir(project_dir):
+        cache_dir = osp.join(project_dir, 'export_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+    else:
+        raise Exception('Project dir {} does not exist'.format(project_dir))
+
+    output_path = osp.join(cache_dir, 'stats.xlsx')
+
+    xlsx = pd.ExcelWriter(output_path)
+    labels =  dict((each['id'], each['name']) for each in list(db_project.label_set.values()))
+    labels = dict((int(k),v) for k,v in labels.items())
+    for (tid,tname) in tasks:
+        db_ann = task.get_task_data(tid)
+        struct = dict((v, dict((each.name, 0) for each in Metrics))
+                      for v in list(labels.values()) + ["Total"])
+        for each in db_ann['shapes']:
+            source = each['source']
+            type = each['type']
+            label = labels[each['label_id']]
+
+            if type == 'rectangle':
+                struct[label][Metrics.Rectangle.name] += 1
+                struct["Total"][Metrics.Rectangle.name] += 1
+                if source == 'manual':
+                    struct[label][Metrics.Manually.name] += 1
+                    struct["Total"][Metrics.Manually.name] += 1
+                struct[label][Metrics.Total.name] += 1
+                struct["Total"][Metrics.Total.name] += 1
+
+        for each in db_ann['tags']:
+            source = each['source']
+            label = labels[each['label_id']]
+
+            struct[label][Metrics.Tags.name] += 1
+            struct["Total"][Metrics.Tags.name] += 1
+            if source == 'manual':
+                struct[label][Metrics.Manually.name] += 1
+                struct["Total"][Metrics.Manually.name] += 1
+            struct[label][Metrics.Total.name] += 1
+            struct["Total"][Metrics.Total.name] += 1
+
+        struct_df = pd.DataFrame(struct).transpose()
+        struct_df.to_excel(xlsx, sheet_name="#{}_{}".format(tid, tname), index=True)
+    xlsx.close()
+    return output_path
 
 def export_task_annotations(task_id, dst_format=None, server_url=None):
     return export_task(task_id, dst_format, server_url=server_url, save_images=False)

@@ -378,6 +378,31 @@
                 }
             }
 
+            async function exportStat(id) {
+                const { backendAPI } = config;
+                let url = `${backendAPI}/projects/${id}/stat`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(`${url}`, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                url = `${url}?action=download`;
+                                resolve(url);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
             async function createProject(projectSpec) {
                 const { backendAPI } = config;
 
@@ -1012,6 +1037,7 @@
                             save: saveProject,
                             create: createProject,
                             delete: deleteProject,
+                            exportStat: exportStat,
                         }),
                         writable: false,
                     },

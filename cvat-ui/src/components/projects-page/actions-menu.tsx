@@ -6,15 +6,18 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
+import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import Text from 'antd/lib/typography/Text';
 
-import { deleteProjectAsync } from 'actions/projects-actions';
+import { deleteProjectAsync, exportProjectStatAsync } from 'actions/projects-actions';
 
 interface Props {
     projectInstance: any;
+    pending: boolean;
 }
 
 export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
-    const { projectInstance } = props;
+    const { projectInstance, pending } = props;
 
     const dispatch = useDispatch();
 
@@ -34,8 +37,20 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
         });
     };
 
+    const onExportProjectStat = (): void => {
+        dispatch(exportProjectStatAsync(projectInstance));
+    }
     return (
         <Menu className='cvat-project-actions-menu'>
+            <Menu.Item onClick={onExportProjectStat} key='project-downloader' disabled={pending} className='cvat-menu-download-project-stats-item'>
+                <DownloadOutlined />
+                <Text disabled={pending}>
+                    Download Stats
+                </Text>
+                {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
+
+            </Menu.Item>
+            <hr />
             <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>
         </Menu>
     );

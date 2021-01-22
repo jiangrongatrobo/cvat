@@ -29,6 +29,8 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     const updated = moment(projectInstance.updatedDate).fromNow();
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const deleted = projectInstance.id in deletes ? deletes[projectInstance.id] : false;
+    const stats = useSelector((state: CombinedState) => state.projects.activities.stats)
+    const pending = projectInstance.id in stats ? stats[projectInstance.id] : false;
 
     let projectPreview = null;
     if (projectInstance.tasks.length) {
@@ -90,7 +92,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                             <Text type='secondary'>{`Last updated ${updated}`}</Text>
                         </div>
                         <div>
-                            <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={projectInstance} />}>
+                            <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={projectInstance} pending={pending} />}>
                                 <Button type='link' size='large' icon={<MoreOutlined />} />
                             </Dropdown>
                         </div>

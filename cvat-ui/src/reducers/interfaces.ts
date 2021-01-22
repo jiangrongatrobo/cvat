@@ -47,6 +47,10 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        stats: {
+            // only one stats exporting simultaneously
+            [projectId: number]: boolean; // exporting name
+        };
     };
 }
 

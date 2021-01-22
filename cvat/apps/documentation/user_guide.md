@@ -1651,3 +1651,13 @@ black-box: 涂黑敏感信息
 
 完成标注后，可以把owner修改成admin来锁定任务。<br>
 ![](static/documentation/images/change-owner.jpg)
+
+
+#### 导出Project的标注统计结果
+
+在项目列表或者项目详情页面的Actions中Download Stats来导出excel表格。
+项目中每个Task的统计分Sheet写入。
+
+![](static/documentation/images/downloadstats1.jpg)<br>
+![](static/documentation/images/downloadstats2.jpg)<br>
+![](static/documentation/images/stats-sheet.jpg)<br>

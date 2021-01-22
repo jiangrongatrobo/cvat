@@ -281,6 +281,31 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             context={"request": request})
         return Response(serializer.data)
 
+    @swagger_auto_schema(method='get', operation_summary='Method allows to download project stat',
+        manual_parameters=[
+            openapi.Parameter('filename', openapi.IN_QUERY,
+                description="Desired output file name",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('action', in_=openapi.IN_QUERY,
+                description='Used to start downloading process after stats file had been created',
+                type=openapi.TYPE_STRING, required=False, enum=['download'])
+        ],
+        responses={'202': openapi.Response(description='Exporting has been started'),
+            '201': openapi.Response(description='Output file is ready for downloading'),
+            '200': openapi.Response(description='Download of file started'),
+        })
+    @action(detail=True, methods=['GET'], serializer_class=None, url_path='stat')
+    def stats_export(self, request, pk):
+        db_project = self.get_object() # force to call check_object_permissions
+
+        return _export_stats(db_project=db_project,
+            rq_id="/api/v1/projects/{}/stats".format(pk),
+            request=request,
+            action=request.query_params.get("action", "").lower(),
+            callback=dm.views.export_project_stats,
+            filename=request.query_params.get("filename", "").lower(),
+        )
+
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -1044,8 +1069,8 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
                     timestamp = datetime.strftime(last_task_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or \
-                        "task_{}-{}-{}{}".format(
-                        db_task.name, timestamp,
+                        "task#{}_{}-{}-{}{}".format(
+                        db_task.id, db_task.name, timestamp,
                         format_name, osp.splitext(file_path)[1])
                     return sendfile(request, file_path, attachment=True,
                         attachment_filename=filename.lower())
@@ -1072,4 +1097,62 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         args=(db_task.id, format_name, server_address), job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+def _export_stats(db_project, rq_id, request, action, callback, filename):
+    if action not in {"", "download"}:
+        raise serializers.ValidationError(
+            "Unexpected action specified for the request")
+
+    queue = django_rq.get_queue("default", is_async=True)  # set is_async=False to debug.
+    rq_job = queue.fetch_job(rq_id)
+    tasks_queryset = Task.objects.filter(project_id=db_project.id).order_by('-id')
+    tasks_queryset = auth.filter_task_queryset(tasks_queryset, request.user)
+    if rq_job:
+        # last_project_update_time = last tasks/project updated time
+        last_project_update_time = max([timezone.localtime(db_project.updated_date)] + \
+                                        [timezone.localtime(each.updated_date) for each in tasks_queryset])
+
+        request_time = rq_job.meta.get('request_time', None)
+        if request_time is None or request_time < last_project_update_time:
+            rq_job.cancel()
+            rq_job.delete()
+        else:
+            if rq_job.is_finished:
+                file_path = rq_job.return_value
+                if action == "download" and osp.exists(file_path):
+                    rq_job.delete()
+                    timestamp = datetime.strftime(last_project_update_time,
+                        "%Y_%m_%d_%H_%M_%S")
+                    filename = filename or \
+                        "project#{}_{}-{}{}".format(
+                        db_project.id, db_project.name, timestamp, osp.splitext(file_path)[1])
+                    return sendfile(request, file_path, attachment=True,
+                        attachment_filename=filename.lower())
+                else:
+                    if osp.exists(file_path):
+                        return Response(status=status.HTTP_201_CREATED)
+            elif rq_job.is_failed:
+                exc_info = str(rq_job.exc_info)
+                rq_job.delete()
+                return Response(exc_info,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response(status=status.HTTP_202_ACCEPTED)
+
+    try:
+        if request.scheme:
+            server_address = request.scheme + '://'
+        server_address += request.get_host()
+    except Exception:
+        server_address = None
+
+    ttl = dm.views.CACHE_TTL.total_seconds()
+    queue.enqueue_call(func=callback,
+                       args=([(each.id, each.name) for each in tasks_queryset]
+                            , db_project
+                            , server_address),
+                       job_id=rq_id,
+                       meta={'request_time': timezone.localtime()},
+                       result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)

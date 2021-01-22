@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Dispatch, ActionCreator } from 'redux';
+import { AnyAction, Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
@@ -26,6 +26,9 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
+    EXPORT_PROJECT_STAT = 'EXPORT_PROJECT_STAT',
+    EXPORT_PROJECT_STAT_SUCCESS = 'EXPORT_PROJECT_STAT_SUCCESS',
+    EXPORT_PROJECT_STAT_FAILED = 'EXPORT_PROJECT_STAT_FAILED',
 }
 
 // prettier-ignore
@@ -54,6 +57,13 @@ const projectActions = {
     ),
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
+    ),
+    exportProjectStat: (projectId: number) => createAction(ProjectsActionTypes.EXPORT_PROJECT_STAT, { projectId }),
+    exportProjectStatSuccess: (projectId: number) => (
+        createAction(ProjectsActionTypes.EXPORT_PROJECT_STAT_SUCCESS, { projectId })
+    ),
+    exportProjectStatFailed: (projectId: number, error: any) => (
+        createAction(ProjectsActionTypes.EXPORT_PROJECT_STAT_FAILED, { projectId, error })
     ),
 };
 
@@ -169,5 +179,22 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
         } catch (error) {
             dispatch(projectActions.deleteProjectFailed(projectInstance.id, error));
         }
+    };
+}
+
+
+export function exportProjectStatAsync(projectInstance: any): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.exportProjectStat(projectInstance.id));
+        try {
+            const url = await projectInstance.exportStat();
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = url;
+            downloadAnchor.click();
+        } catch (error) {
+            dispatch(projectActions.exportProjectStatFailed(projectInstance.id, error));
+        }
+
+        dispatch(projectActions.exportProjectStatSuccess(projectInstance.id));
     };
 }

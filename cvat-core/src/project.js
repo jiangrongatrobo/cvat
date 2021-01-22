@@ -213,7 +213,7 @@
         }
 
         /**
-         * Method deletes a task from a server
+         * Method deletes a project from a server
          * @method delete
          * @memberof module:API.cvat.classes.Project
          * @readonly
@@ -224,6 +224,21 @@
          */
         async delete() {
             const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.delete);
+            return result;
+        }
+
+        /**
+         * Method export a project stat from a server
+         * @method exportStat
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async exportStat() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.exportStat);
             return result;
         }
     }
@@ -260,6 +275,11 @@
 
     Project.prototype.delete.implementation = async function () {
         const result = await serverProxy.projects.delete(this.id);
+        return result;
+    };
+
+    Project.prototype.exportStat.implementation = async function () {
+        const result = await serverProxy.projects.exportStat(this.id);
         return result;
     };
 })();
