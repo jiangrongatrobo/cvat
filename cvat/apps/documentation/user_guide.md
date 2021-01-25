@@ -1661,3 +1661,8 @@ black-box: 涂黑敏感信息
 ![](static/documentation/images/downloadstats1.jpg)<br>
 ![](static/documentation/images/downloadstats2.jpg)<br>
 ![](static/documentation/images/stats-sheet.jpg)<br>
+
+
+#### 创建Task时，选择摄像头标签。
+
+![](static/documentation/images/default_tags.jpg)<br>
