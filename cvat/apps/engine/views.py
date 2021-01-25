@@ -448,6 +448,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
+            data['default_tags'] = [int(v) for k,v in request.data.items() if k.startswith('default_tags')]
             task.create(db_task.id, data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:

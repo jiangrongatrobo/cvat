@@ -18,6 +18,7 @@ import { Files } from 'components/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
+import AdvancedConfigurationManager from 'containers/create-task-page/advanced-configuration-form'
 
 export interface CreateTaskData {
     projectId: number | null;
@@ -264,15 +265,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private renderAdvancedBlock(): JSX.Element {
         const { installedGit } = this.props;
         const { activeFileManagerTab } = this.state;
+        const { projectId } = this.state;
         return (
             <Col span={24}>
                 <Collapse defaultActiveKey={['1']}>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
-                        <AdvancedConfigurationForm
+                        <AdvancedConfigurationManager
                             installedGit={installedGit}
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}
                             onSubmit={this.handleSubmitAdvancedConfiguration}
+                            projectId={projectId}
                         />
                     </Collapse.Panel>
                 </Collapse>
@@ -281,7 +284,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     public render(): JSX.Element {
-        const { status } = this.props;
+        const { status, projectId } = this.props;
         const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
 
         return (
@@ -291,7 +294,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 </Col>
 
                 {this.renderBasicBlock()}
-                {this.renderProjectBlock()}
+                {projectId && this.renderProjectBlock()}
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}

@@ -969,6 +969,7 @@
                 stop_frame: undefined,
                 frame_filter: undefined,
                 data_chunk_size: undefined,
+                data_default_tags: undefined,
                 data_compressed_chunk_type: undefined,
                 data_original_chunk_type: undefined,
                 use_zip_chunks: undefined,
@@ -1479,6 +1480,26 @@
                             data.data_chunk_size = chunkSize;
                         },
                     },
+                    dataDefaultTags: {
+                        get: () => data.data_default_tags,
+                        set: (dataDefaultTags) => {
+                            if (!Array.isArray(dataDefaultTags)) {
+                                throw new ArgumentError(
+                                    `Value must be an array. But ${typeof dataDefaultTags} has been got.`,
+                                );
+                            }
+
+                            for (const value of dataDefaultTags) {
+                                if (typeof value !== 'number') {
+                                    throw new ArgumentError(
+                                        `Array values must be a number. But ${value.constructor.name} has been got.`,
+                                    );
+                                }
+                            }
+
+                            Array.prototype.push.apply(data.data_default_tags, dataDefaultTags);
+                        },
+                    },
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
@@ -1967,6 +1988,9 @@
         }
         if (typeof this.dataChunkSize !== 'undefined') {
             taskDataSpec.chunk_size = this.dataChunkSize;
+        }
+        if (typeof this.dataDefaultTags !== 'undefined') {
+            taskDataSpec.default_tags = this.dataDefaultTags;
         }
         if (typeof this.copyData !== 'undefined') {
             taskDataSpec.copy_data = this.copyData;

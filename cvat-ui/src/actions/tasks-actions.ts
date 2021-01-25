@@ -394,6 +394,10 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         if (data.advanced.dataChunkSize) {
             description.data_chunk_size = data.advanced.dataChunkSize;
         }
+        if (data.advanced.dataDefaultTags) {
+            const defaultTagsArray = data.advanced.dataDefaultTags.split(",").map(Number);
+            description.data_default_tags = defaultTagsArray;
+        }
         if (data.advanced.copyData) {
             description.copy_data = data.advanced.copyData;
         }

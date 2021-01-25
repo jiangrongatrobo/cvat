@@ -14,6 +14,11 @@ import Text from 'antd/lib/typography/Text';
 import patterns from 'utils/validation-patterns';
 import { Store } from 'antd/lib/form/interface';
 
+import { Select, Spin } from 'antd';
+
+import { Project } from 'reducers/interfaces';
+
+
 export interface AdvancedConfiguration {
     bugTracker?: string;
     imageQuality?: number;
@@ -26,6 +31,7 @@ export interface AdvancedConfiguration {
     repository?: string;
     useZipChunks: boolean;
     dataChunkSize?: number;
+    dataDefaultTags?: string;
     useCache: boolean;
     copyData?: boolean;
 }
@@ -42,6 +48,15 @@ interface Props {
     onSubmit(values: AdvancedConfiguration): void;
     installedGit: boolean;
     activeFileManagerTab: string;
+    projectId: number|null;
+    projects: Project[];
+    fetching: boolean;
+    getLabels: (projectId: number | null) => void;
+}
+
+interface State {
+    first_time_get_labels: boolean;
+    defaultTags: string | null;
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -123,17 +138,22 @@ const validateStopFrame: RuleRender = ({ getFieldValue }): RuleObject => ({
     },
 });
 
-class AdvancedConfigurationForm extends React.PureComponent<Props> {
+class AdvancedConfigurationForm extends React.PureComponent<Props, State> {
     private formRef: RefObject<FormInstance>;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
+        this.state = {
+            first_time_get_labels: true,
+            defaultTags: null,
+        }
     }
 
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
+            this.formRef.current.setFieldsValue({ dataDefaultTags: this.state.defaultTags });
             return this.formRef.current.validateFields().then(
                 (values: Store): Promise<void> => {
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
@@ -157,6 +177,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         if (this.formRef.current) {
             this.formRef.current.resetFields();
         }
+    }
+
+    private pickTags = (pickedTags:number[]): void => {
+        this.setState({
+            defaultTags: pickedTags.join(","),
+        })
     }
 
     /* eslint-disable class-methods-use-this */
@@ -355,8 +381,59 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderDefaultTag(): JSX.Element {
+        const {projects, fetching } = this.props;
+        let projectLabels = [];
+        if (projects.length === 0) {
+            return <Spin size='large' className='cvat-spinner' />;
+        } else {
+            const [project] = projects;
+            const labels = project.labels;
+            for (let i = 0; i < labels.length; i++) {
+                projectLabels.push(
+                    <Select.Option key={labels[i].id} value={labels[i].id}>
+                        {labels[i].name}
+                    </Select.Option>);
+            }
+        }
+        return (
+            <Tooltip
+            title={(
+                <>
+                    Create default tags for the whole task while creating.
+                </>
+            )}
+            mouseLeaveDelay={0}
+        >
+                <Form.Item
+                label='Default tags'
+                name='dataDefaultTags'
+                >
+                    <Select
+                    mode="multiple"
+                    allowClear
+                    style={{ width: '100%' }}
+                    placeholder="Please select default tags"
+                    defaultValue={[]}
+                    onChange={this.pickTags}
+                    >
+                    {projectLabels}
+                    </Select>
+                </Form.Item>
+            </Tooltip>
+
+        );
+    }
+
     public render(): JSX.Element {
-        const { installedGit, activeFileManagerTab } = this.props;
+        const { installedGit, activeFileManagerTab, projectId, fetching, getLabels } = this.props;
+        const withProject = !(projectId === null || typeof projectId === 'undefined');
+        if (!fetching && withProject && this.state.first_time_get_labels) {
+            getLabels(projectId);
+            this.setState({
+                first_time_get_labels: false,
+            })
+        };
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 {activeFileManagerTab === 'share' ? (
@@ -392,6 +469,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
+                    {withProject && activeFileManagerTab !== 'tasks' ? (
+                        <Col span={7} offset={1}>
+                            {this.renderDefaultTag()}
+                        </Col>
+                    ) : null}
                 </Row>
 
                 {installedGit ? this.renderGit() : null}

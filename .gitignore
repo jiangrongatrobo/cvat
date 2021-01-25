@@ -4,6 +4,7 @@
 /share/
 /static/
 /db.sqlite3
+/db.sqlite3-journal
 /dump.rdb
 /.env
 /keys

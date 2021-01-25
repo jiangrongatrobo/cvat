@@ -87,6 +87,7 @@ export default function ProjectSearchField(props: Props): JSX.Element {
                 value: proj.id.toString(),
                 label: proj.name,
             }))}
+            disabled
         />
     );
 }

@@ -479,3 +479,19 @@ def _create_thread(tid, data):
                     slogger.glob.error(err_msg, exc_info=True)
                     raise Exception(err_msg)
     ############# hacking end #############
+    ############ hacking for default tags ###########
+    if data['default_tags']:
+        tgt_db_task = models.Task.objects.get(pk=tid)
+        tags = []
+        for each_frame in tgt_db_task.data.images.all():
+            for tag_id in data['default_tags']:
+                tags.append({'frame':each_frame.frame,'label_id':tag_id,'group':0,'attributes':[]})
+        serializer = LabeledDataSerializer(data={'shapes':[],'tracks':[],'tags':tags,'version':0})
+        if serializer.is_valid(raise_exception=True):
+            try:
+                _ = dm.task.patch_task_data(tid, serializer.data, dm.task.PatchAction.CREATE)
+            except (AttributeError, IntegrityError) as e:
+                err_msg = "error occured during saving default tags annotations {}".format(str(e))
+                slogger.glob.error(err_msg, exc_info=True)
+                raise Exception(err_msg)
+    ############# hacking end #############
