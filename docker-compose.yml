@@ -68,7 +68,7 @@ services:
       - /app/cvat/assets/cvat_keys:/home/django/keys
       - /app/cvat/assets/cvat_logs:/home/django/logs
       - /app/cvat/assets/cvat_models:/home/django/models
-      - /app/cvat/assets/roborock_data:/home/django/share:ro
+      - /app/disk2/roborock_data:/home/django/share:ro
 
   cvat_ui:
     container_name: cvat_ui

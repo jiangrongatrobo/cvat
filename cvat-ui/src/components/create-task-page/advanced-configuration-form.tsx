@@ -31,7 +31,7 @@ export interface AdvancedConfiguration {
     repository?: string;
     useZipChunks: boolean;
     dataChunkSize?: number;
-    dataDefaultTags?: string;
+    dataDefaultTags?: number[];
     useCache: boolean;
     copyData?: boolean;
 }
@@ -56,7 +56,6 @@ interface Props {
 
 interface State {
     first_time_get_labels: boolean;
-    defaultTags: string | null;
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -146,14 +145,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props, State> {
         this.formRef = React.createRef<FormInstance>();
         this.state = {
             first_time_get_labels: true,
-            defaultTags: null,
         }
     }
 
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
-            this.formRef.current.setFieldsValue({ dataDefaultTags: this.state.defaultTags });
             return this.formRef.current.validateFields().then(
                 (values: Store): Promise<void> => {
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
@@ -177,12 +174,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props, State> {
         if (this.formRef.current) {
             this.formRef.current.resetFields();
         }
-    }
-
-    private pickTags = (pickedTags:number[]): void => {
-        this.setState({
-            defaultTags: pickedTags.join(","),
-        })
     }
 
     /* eslint-disable class-methods-use-this */
@@ -384,23 +375,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props, State> {
     private renderDefaultTag(): JSX.Element {
         const {projects, fetching } = this.props;
         const projectLabels: any = [];
-        const initialTagId: number[] = [];
         if (projects.length === 0) {
             return <Spin size='large' className='cvat-spinner' />;
         } else {
             const [project] = projects;
             const labels = project.labels;
             for (let i = 0; i < labels.length; i++) {
-                if (labels[i].name === "tanosv_unknown_camera"){
-                    initialTagId.push( labels[i].id)
-                }
                 projectLabels.push(
                     <Select.Option key={labels[i].id} value={labels[i].id}>
                         {labels[i].name}
                     </Select.Option>);
             }
         }
-        this.pickTags(initialTagId);
         return (
             <Tooltip
             title={(
@@ -419,8 +405,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props, State> {
                     allowClear
                     style={{ width: '100%' }}
                     placeholder="Please select default tags"
-                    defaultValue={initialTagId}
-                    onChange={this.pickTags}
                     >
                     {projectLabels}
                     </Select>
