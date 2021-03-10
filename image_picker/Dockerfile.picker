@@ -1,0 +1,7 @@
+FROM python:3.7
+WORKDIR /app
+RUN pip install Flask gunicorn
+RUN cd /app && mkdir cvat
+ADD .  /app
+EXPOSE 80
+CMD ["gunicorn","-w","6","-b",":80","app:app"]

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        label:before {
+          content: url("/static_picker/icons8-unchecked-checkbox-40.png");
+          position: absolute;
+          z-index: 100;
+        }
+        :checked+label:before {
+          content: url("/static_picker/icons8-tick-box-40.png");
+        }
+        input[type=checkbox] {
+          display: none;
+        }
+        .serif_medium
+        {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 280%;
+            text-align:center;
+        }
+        #bugids li{
+            font-size: 140%;
+        }
+        .btn{
+            font-size: 140%;
+        }
+        .errortypechoices{
+            font-size: 140%;
+        }
+        .selected{font-weight:bold; background: #ff99cc; color:#fff;}
+    </style>
+</head>
+<body>
+    <div class="centered-content" style="background-color:#fff">
+        <table style="width:100%;background-color:#fff">
+            <tr>
+                <td id="col1" style="white-space:nowrap;background-color:#fff">
+                  <h2 class="row" style="padding:10px 10px 10px 20px" id="taskName">
+                      {{ name }}
+                  </h2>
+                  <div id="imgs"  class="row">
+                  </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div id="buttons" style="padding:12px 2px 8px 2px">
+                        <button title="未被选中的图片都将被删除，请谨慎点击" id="selectImgButton" type="button" class="btn btn-primary" value="{{taskId}}">确认选择</button>
+                        <button  id="selectAllImg" type="button" class="btn btn-primary">全选</button>
+                        <input type="hidden" value="{{projectId}}" id="projectId">
+                        <input type="hidden" value="{{dataId}}" id="dataId">
+                        <input type="hidden" value="{{dirName}}" id="dirName">
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+<script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script>
+<script type=text/javascript>
+<!--history.replaceState({}, null, "/index.html");-->
+$(document).ready(function(){
+    if(!localStorage.getItem("token"))
+        alert("Unauthorized! Please confirm the login status over CVAT site!")
+    $.ajax({url:'/api/v1/tasks/'+$("#selectImgButton").val()+'/data/meta',type:'get',
+        headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
+        success: function(dataS){
+            if(dataS && dataS.frames.length>0){
+                for(var ii=0; ii<dataS.frames.length; ii+=1){
+                    imagePart =$("<div class='col-lg-3 col-md-3 col-xs-3 col-sm-3 thumb'></div>");
+                    imagePart.append("<input id='checkbox"+ii+"' type='checkbox' value='"+dataS.frames[ii].name+
+                    "'/><label for='checkbox"+ii+"'> <img class='img-responsive' loading='lazy' src='"+$("#dirName").val()+dataS.frames[ii].name+"' width='400px' height='320px'/></label>");
+
+                    $("#imgs").append(imagePart)
+                }
+            }
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown) {
+            alert("Some error happens during original data meta retrieval: " + errorThrown);
+        }
+    })
+});
+function checkCreationStatus(task_id){
+    if(!localStorage.getItem("token"))
+        alert("Unauthorized! Please confirm the login status over CVAT site!")
+     $.ajax({url:'/api/v1/tasks/'+task_id+'/status',type:'get',
+             headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
+             success: function(dataS){
+                 $.ajax({url:'/api/v1/tasks/'+task_id,type:'get',
+                         headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
+                 success: function(dataT){
+                    　if (dataS["state"] == "Finished" && dataT['data'] != "unknown")
+                    　{
+                          alert('筛选完毕，页面将关闭');
+                          window.location.href='/projects/'+$("#projectId").val();
+                    　}
+                     else if(dataS["state"] =="Failed"){
+                         alert("the status of newly created task is failed!");
+                         window.close();
+                     }
+                     else{
+                        setTimeout(function () {checkCreationStatus(task_id)},2000);
+                     }
+                 }
+             })
+             }
+        })
+     }
+    $("#selectAllImg").click(function(){
+        var checkboxes = $("#imgs").find("input:checkbox");
+        for(var ii=0;ii<checkboxes.length;ii++)
+        {
+            checkboxes.eq(ii).prop('checked', true);
+        }
+    });
+   $("#selectImgButton").click(function(){
+        var checkedImgs=[]
+        var checkboxes = $("#imgs").find("input:checkbox");
+        for(var ii=0;ii<checkboxes.length;ii++)
+        {
+            if(checkboxes.eq(ii).prop("checked"))
+            {
+                checkedImgs.push(checkboxes.eq(ii).val());
+            }
+        }
+        if(checkedImgs.length <= 0)
+            alert('请至少选择一张图片，否则请直接删除任务！');
+        else{
+
+        var toSelectImg = confirm("新任务将只包含选中图片。确认继续嘛?")
+        if(toSelectImg){
+            if(!localStorage.getItem("token"))
+                alert("Unauthorized! Please confirm the login status over CVAT site!")
+            $.ajax({
+                    url:'/api/v1/tasks',
+                    type:'post',
+                    headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
+                    data :{'name': $("#taskName").text().trim()+'_picked',
+                            'overlap': 0,
+                            'project_id': $("#projectId").val()},
+                    cache: false,
+                    success: function(dataO){
+                        task_id=dataO['id'];
+                        dataDict={'image_quality':100, 'use_cache': true, 'use_zip_chunks': true, 'copy_data':true, 'image_picking_id':$("#dataId").val()}
+                        for(var ii=0;ii<checkedImgs.length;ii++)
+                            dataDict['server_files['+ii+']']=checkedImgs[ii]
+                        $.ajax({
+                                    url:'/api/v1/tasks/'+task_id+'/data',
+                                    type:'post',
+                                    headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
+                                    data: dataDict,
+                                    cache: false,
+                                    success: function(dataI){
+                                        setTimeout(function () {checkCreationStatus(task_id)},3000);
+                                    },
+                                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                        alert("Some error happens, task creation failed! Error meassage is: " + errorThrown);
+                                        window.close();
+                                    }
+                                });
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        alert("Some error happens, task creation failed! Error meassage is: " + errorThrown);
+                        window.close();
+                    }
+                });
+            }
+        }
+    });
+</script>
+</html>

@@ -54,13 +54,18 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
 ############################# Internal implementation for server API
 
-def _copy_data_from_share(server_files, upload_dir):
+def _copy_data_from_share(server_files, upload_dir, img_picking_id=-1):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from share..'
     job.save_meta()
+    share_root=settings.SHARE_ROOT
+    ##########Hacking for image picking############
+    if img_picking_id >= 0:
+        share_root=os.path.join(settings.MEDIA_DATA_ROOT, str(img_picking_id), 'raw')
+    ##########Hacking ends############
 
     for path in server_files:
-        source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        source_path = os.path.join(share_root, os.path.normpath(path))
         target_path = os.path.join(upload_dir, path)
         if os.path.isdir(source_path):
             copy_tree(source_path, target_path)
@@ -262,7 +267,7 @@ def _create_thread(tid, data):
 
     if data['server_files']:
         if db_data.storage == StorageChoice.LOCAL:
-            _copy_data_from_share(data['server_files'], upload_dir)
+            _copy_data_from_share(data['server_files'], upload_dir, data['image_picking_id'])
         else:
             upload_dir = settings.SHARE_ROOT
 
