@@ -11,7 +11,7 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
-
+import Button from 'antd/lib/button';
 import getCore from 'cvat-core-wrapper';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
@@ -22,7 +22,6 @@ import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 
 const core = getCore();
-
 interface Props {
     previewImage: string;
     taskInstance: any;
@@ -193,19 +192,29 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
         return (
             <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
-                <Col span={10}>
+                <Col span={7}>
                     {ownerName && (
                         <Text type='secondary'>{`Task #${taskInstance.id} Created by ${ownerName} on ${created}`}</Text>
                     )}
                 </Col>
-                <Col span={6}>
+                <Col span={5}>
                     <Text type='secondary'>Assigned to</Text>
                     {assigneeSelect}
                 </Col>
-                <Col span={6}>
+                <Col span={5}>
                     <Text type='secondary'>Owned by</Text>
                     {ownerSelect}
                 </Col>
+                {taskInstance.projectId && (
+                  <Col span={5}>
+                    <Button
+                        type='link'
+                        href={`/imgPicker?imgDir=${taskInstance.data_id}&project=${taskInstance.projectId}&name=${taskInstance.name}&task=${taskInstance.id}`}
+                        target='_blank'>
+                        Pick Images
+                    </Button>
+　　　　　　　　　　　</Col>
+                )}
             </Row>
         );
     }

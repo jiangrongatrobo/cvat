@@ -269,12 +269,12 @@ class DataSerializer(serializers.ModelSerializer):
     tasks_to_merge = TaskToMergeSerializer(many=True, default=[])
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
-
+    image_picking_id = serializers.IntegerField(default=-1)
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'tasks_to_merge','use_zip_chunks',
-            'use_cache', 'copy_data')
+            'use_cache', 'copy_data', 'image_picking_id')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -305,6 +305,7 @@ class DataSerializer(serializers.ModelSerializer):
         validated_data.pop('use_zip_chunks')
         validated_data.pop('use_cache')
         validated_data.pop('copy_data')
+        validated_data.pop('image_picking_id')
         db_data = models.Data.objects.create(**validated_data)
 
         data_path = db_data.get_data_dirname()

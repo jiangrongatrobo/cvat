@@ -12,7 +12,6 @@ INSTALLED_APPS += [
 ]
 
 ALLOWED_HOSTS.append('testserver')
-
 # Django-sendfile:
 # https://github.com/johnsensible/django-sendfile
 SENDFILE_BACKEND = 'sendfile.backends.development'
@@ -42,5 +41,4 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/login'.format(UI_UR
 
 CORS_ORIGIN_WHITELIST = [UI_URL]
 CORS_REPLACE_HTTPS_REFERER = True
-
 NUCLIO['HOST'] = '192.168.50.153'

@@ -975,8 +975,8 @@
                 use_zip_chunks: undefined,
                 use_cache: undefined,
                 copy_data: undefined,
+                data_id: undefined,
             };
-
             let updatedFields = {
                 name: false,
                 assignee: false,
@@ -989,7 +989,7 @@
                     data[property] = initialData[property];
                 }
             }
-
+            data.data_id = initialData.data;
             if (data.assignee) data.assignee = new User(data.assignee);
             if (data.owner) data.owner = new User(data.owner);
 
@@ -1041,6 +1041,9 @@
                      */
                     id: {
                         get: () => data.id,
+                    },
+                    data_id: {
+                        get: () => data.data_id,
                     },
                     /**
                      * @name name

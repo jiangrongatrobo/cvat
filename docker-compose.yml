@@ -90,6 +90,22 @@ services:
     depends_on:
       - cvat
 
+  cvat_picker:
+      container_name: cvat_picker
+      image: cvat/picker
+      restart: always
+      build:
+        context: ./image_picker
+        dockerfile: Dockerfile.picker
+      depends_on:
+          - cvat
+      environment:
+          CVAT_HOST: ${CVAT_HOST}
+      ports:
+          - '18423:80'
+      volumes:
+          - /app/cvat/assets/cvat_data:/app/cvat/assets/cvat_data
+
   cvat_proxy:
     container_name: cvat_proxy
     image: nginx:stable-alpine
@@ -97,6 +113,7 @@ services:
     depends_on:
       - cvat
       - cvat_ui
+      - cvat_picker
     environment:
       CVAT_HOST: ${CVAT_HOST}
     ports:
