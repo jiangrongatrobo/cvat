@@ -49,7 +49,7 @@
             <tr>
                 <td>
                     <div id="buttons" style="padding:12px 2px 8px 2px">
-                        <button title="未被选中的图片都将被删除，请谨慎点击" id="selectImgButton" type="button" class="btn btn-primary" value="{{taskId}}">确认选择</button>
+                        <button title="未被选中的图片和其相关的标注信息都将被删除，请谨慎点击" id="selectImgButton" type="button" class="btn btn-primary" value="{{taskId}}">确认选择</button>
                         <button  id="selectAllImg" type="button" class="btn btn-primary">全选</button>
                         <input type="hidden" value="{{projectId}}" id="projectId">
                         <input type="hidden" value="{{dataId}}" id="dataId">
@@ -64,29 +64,33 @@
 <script type=text/javascript>
 <!--history.replaceState({}, null, "/index.html");-->
 $(document).ready(function(){
-    if(!localStorage.getItem("token"))
-        alert("Unauthorized! Please confirm the login status over CVAT site!")
+    if(!localStorage.getItem("token")){
+        alert("Unauthorized! Please confirm the login status over CVAT site!");
+        return;
+    }
     $.ajax({url:'/api/v1/tasks/'+$("#selectImgButton").val()+'/data/meta',type:'get',
         headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
         success: function(dataS){
             if(dataS && dataS.frames.length>0){
                 for(var ii=0; ii<dataS.frames.length; ii+=1){
-                    imagePart =$("<div class='col-lg-3 col-md-3 col-xs-3 col-sm-3 thumb'></div>");
+                    imagePart =$("<div class='col-lg-3 col-md-3 col-xs-3 col-sm-3 thumb' style='padding:0px 0px 0px 53px'></div>");
                     imagePart.append("<input id='checkbox"+ii+"' type='checkbox' value='"+dataS.frames[ii].name+
-                    "'/><label for='checkbox"+ii+"'> <img class='img-responsive' loading='lazy' src='"+$("#dirName").val()+dataS.frames[ii].name+"' width='400px' height='320px'/></label>");
-
+                    "'/><label for='checkbox"+ii+"'> <img class='img-responsive' loading='lazy' src='"+$("#dirName").val()+dataS.frames[ii].name+"' width='400px' height='320px'/></label><span style='position:absolute;top:0px;left:15px;'>"+ii+"</span>");
                     $("#imgs").append(imagePart)
                 }
             }
         },
         error: function(XMLHttpRequest, textStatus, errorThrown) {
             alert("Some error happens during original data meta retrieval: " + errorThrown);
+            window.close();
         }
     })
-});
-function checkCreationStatus(task_id){
-    if(!localStorage.getItem("token"))
-        alert("Unauthorized! Please confirm the login status over CVAT site!")
+})
+function checkCreationStatus(task_id, checkedImgIds){
+    if(!localStorage.getItem("token")){
+        alert("Unauthorized! Please confirm the login status over CVAT site!");
+        return;
+    }
      $.ajax({url:'/api/v1/tasks/'+task_id+'/status',type:'get',
              headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
              success: function(dataS){
@@ -95,15 +99,62 @@ function checkCreationStatus(task_id){
                  success: function(dataT){
                     　if (dataS["state"] == "Finished" && dataT['data'] != "unknown")
                     　{
-                          alert('筛选完毕，页面将关闭');
-                          window.location.href='/projects/'+$("#projectId").val();
+
+                        $.ajax({
+                                            url:'/api/v1/tasks/'+$("#selectImgButton").val()+'/annotations',
+                                            type:'get',cache: false,
+                                            headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
+                                            success: function(dataI){
+                                                shapesToKeep=[]
+                                                if(dataI.shapes.length>0){
+                                                    shapesToKeep=dataI.shapes.filter((ss) =>checkedImgIds.indexOf(ss.frame)>=0);
+                                                    for(var jj=0;jj<shapesToKeep.length;jj+=1){
+                                                        shapesToKeep[jj].frame=checkedImgIds.indexOf(shapesToKeep[jj].frame);
+                                                        delete shapesToKeep[jj].id;
+                                                    }
+                                                }
+                                                tagsToKeep=[]
+                                                if(dataI.tags.length>0){
+                                                    tagsToKeep=dataI.tags.filter((st) =>checkedImgIds.indexOf(st.frame)>=0);
+                                                    for(var jj=0;jj<tagsToKeep.length;jj+=1){
+                                                        tagsToKeep[jj].frame=checkedImgIds.indexOf(tagsToKeep[jj].frame);
+                                                        delete tagsToKeep[jj].id;
+                                                    }
+                                                }
+
+                                                if(shapesToKeep.length>0||tagsToKeep.length>0){
+                                                        $.ajax({
+                                                            url:'/api/v1/tasks/'+task_id+'/annotations',
+                                                            type:'put',cache: false,
+                                                            headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/json', 'Accept':'application/json'},
+                                                            data:JSON.stringify({"shapes":shapesToKeep,"tags":tagsToKeep,"tracks":[],"version":dataI.version+1}),
+                                                            success: function(dataIr){
+                                                                alert('筛选完毕，筛选结果在新任务#'+task_id+'中，页面将关闭');
+                                                                window.location.href='/projects/'+$("#projectId").val();
+                                                            },
+                                                            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                                                alert("Putting annotation infomation to the new task failed!");
+                                                                window.close();
+                                                            }
+                                                        });
+                                                }
+                                                else{
+                                                    alert('筛选完毕，筛选结果在新任务#'+task_id+'中，页面将关闭');
+                                                    window.location.href='/projects/'+$("#projectId").val();
+                                                }
+                                            },
+                                            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                                alert("Obtaining old task annotation infomation failed!");
+                                                window.close();
+                                            }
+                                        });
                     　}
                      else if(dataS["state"] =="Failed"){
                          alert("the status of newly created task is failed!");
                          window.close();
                      }
                      else{
-                        setTimeout(function () {checkCreationStatus(task_id)},2000);
+                         setTimeout(function () {checkCreationStatus(task_id, checkedImgIds)},2000);
                      }
                  }
              })
@@ -117,25 +168,28 @@ function checkCreationStatus(task_id){
             checkboxes.eq(ii).prop('checked', true);
         }
     });
-   $("#selectImgButton").click(function(){
-        var checkedImgs=[]
+    $("#selectImgButton").click(function(){
+        var checkedImgs=[], checkedImgIds=[];
         var checkboxes = $("#imgs").find("input:checkbox");
         for(var ii=0;ii<checkboxes.length;ii++)
         {
             if(checkboxes.eq(ii).prop("checked"))
             {
-                checkedImgs.push(checkboxes.eq(ii).val());
+                 checkedImgs.push(checkboxes.eq(ii).val());
+                 checkedImgIds.push(parseInt(checkboxes.eq(ii).prop('id').replace('checkbox','')));
             }
         }
         if(checkedImgs.length <= 0)
             alert('请至少选择一张图片，否则请直接删除任务！');
         else{
 
-        var toSelectImg = confirm("新任务将只包含选中图片。确认继续嘛?")
+        var toSelectImg = confirm("新任务将包含选中图片与其相关的标注信息。确认继续嘛?")
         if(toSelectImg){
-            if(!localStorage.getItem("token"))
-                alert("Unauthorized! Please confirm the login status over CVAT site!")
-            $.ajax({
+            if(!localStorage.getItem("token")){
+                alert("Unauthorized! Please confirm the login status over CVAT site!");
+                return;
+            }
+                $.ajax({
                     url:'/api/v1/tasks',
                     type:'post',
                     headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
@@ -143,25 +197,25 @@ function checkCreationStatus(task_id){
                             'overlap': 0,
                             'project_id': $("#projectId").val()},
                     cache: false,
-                    success: function(dataO){
-                        task_id=dataO['id'];
+                    success: function(dataOr){
+                        task_id=dataOr['id'];
                         dataDict={'image_quality':100, 'use_cache': true, 'use_zip_chunks': true, 'copy_data':true, 'image_picking_id':$("#dataId").val()}
                         for(var ii=0;ii<checkedImgs.length;ii++)
-                            dataDict['server_files['+ii+']']=checkedImgs[ii]
+                            dataDict['server_files['+ii+']']=checkedImgs[ii];
                         $.ajax({
                                     url:'/api/v1/tasks/'+task_id+'/data',
                                     type:'post',
                                     headers: {'Authorization':'Token '+localStorage.getItem("token").replace(/\"/g, ''), 'Content-Type': 'application/x-www-form-urlencoded'},
                                     data: dataDict,
                                     cache: false,
-                                    success: function(dataI){
-                                        setTimeout(function () {checkCreationStatus(task_id)},3000);
+                                    success: function(dataO){
+                                        setTimeout(function () {checkCreationStatus(task_id, checkedImgIds)},3000);
                                     },
                                     error: function(XMLHttpRequest, textStatus, errorThrown) {
                                         alert("Some error happens, task creation failed! Error meassage is: " + errorThrown);
                                         window.close();
                                     }
-                                });
+                        });
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
                         alert("Some error happens, task creation failed! Error meassage is: " + errorThrown);
