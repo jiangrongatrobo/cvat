@@ -25,7 +25,8 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 import django_rq
 from django.conf import settings
 from django.db import transaction, IntegrityError
-from distutils.dir_util import copy_tree
+# from distutils.dir_util import copy_tree
+import glob
 
 from . import models
 from .log import slogger
@@ -64,16 +65,26 @@ def _copy_data_from_share(server_files, upload_dir, img_picking_id=-1):
         share_root=os.path.join(settings.MEDIA_DATA_ROOT, str(img_picking_id), 'raw')
     ##########Hacking ends############
 
+    # for path in server_files:
+    #     source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+    #     target_path = os.path.join(upload_dir, path)
+    #     if os.path.isdir(source_path):
+    #         copy_tree(source_path, target_path)
+    #     else:
+    #         target_dir = os.path.dirname(target_path)
+    #         if not os.path.exists(target_dir):
+    #             os.makedirs(target_dir)
+    #         shutil.copyfile(source_path, target_path)
     for path in server_files:
-        source_path = os.path.join(share_root, os.path.normpath(path))
-        target_path = os.path.join(upload_dir, path)
+        source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
         if os.path.isdir(source_path):
-            copy_tree(source_path, target_path)
+            # copy_tree(source_path, upload_dir)
+            for filename in glob.glob(os.path.join(source_path, '*.*')):
+                shutil.copy2(filename, upload_dir)
         else:
-            target_dir = os.path.dirname(target_path)
-            if not os.path.exists(target_dir):
-                os.makedirs(target_dir)
-            shutil.copyfile(source_path, target_path)
+            shutil.copy2(source_path, upload_dir)
 
 def _save_task_to_db(db_task):
     job = rq.get_current_job()
@@ -284,7 +295,11 @@ def _create_thread(tid, data):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
-            source_paths=[os.path.join(upload_dir, f) for f in media_files]
+            if data['server_files'] and db_data.storage == StorageChoice.LOCAL:
+                source_paths=[os.path.join(upload_dir, f) for f in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, f))]
+                media_type = 'image'
+            else:
+                source_paths=[os.path.join(upload_dir, f) for f in media_files]
             if media_type in  ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
             extractor = MEDIA_TYPES[media_type]['extractor'](
