@@ -36,7 +36,7 @@ from .log import slogger
 def create(tid, data):
     """Schedule the task"""
     q = django_rq.get_queue(
-        'default', is_async=True)  # set is_async=False to debug.
+        'default', is_async=False)  # set is_async=False to debug.
     q.enqueue_call(func=_create_thread, args=(tid, data),
                    job_id="/api/v1/tasks/{}".format(tid))
 
@@ -66,7 +66,7 @@ def _copy_data_from_share(server_files, upload_dir, img_picking_id=-1):
     ##########Hacking ends############
 
     # for path in server_files:
-    #     source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+    #     source_path = os.path.join(share_root, os.path.normpath(path))
     #     target_path = os.path.join(upload_dir, path)
     #     if os.path.isdir(source_path):
     #         copy_tree(source_path, target_path)
@@ -76,7 +76,7 @@ def _copy_data_from_share(server_files, upload_dir, img_picking_id=-1):
     #             os.makedirs(target_dir)
     #         shutil.copyfile(source_path, target_path)
     for path in server_files:
-        source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        source_path = os.path.join(share_root, os.path.normpath(path))
         if not os.path.exists(upload_dir):
             os.makedirs(upload_dir)
         if os.path.isdir(source_path):
