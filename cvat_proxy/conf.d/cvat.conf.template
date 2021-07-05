@@ -16,7 +16,7 @@ server {
         proxy_pass  http://cvat_picker;
     }
 
-    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
+    location ~* /api/.*|git/.*|opencv/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
         proxy_pass              http://cvat:8080;
     }
 

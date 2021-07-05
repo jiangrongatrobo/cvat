@@ -22,3 +22,9 @@
     max-height: 20em;
     overflow: auto;
 }
+
+.cvat-file-manager-local-tab {
+    > span:nth-child(1) {
+        display: block;
+    }
+}

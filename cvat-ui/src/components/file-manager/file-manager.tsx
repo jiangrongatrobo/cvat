@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import Tabs from 'antd/lib/tabs';
 import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
-import Tooltip from 'antd/lib/tooltip';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
@@ -115,7 +115,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         const { files } = this.state;
 
         return (
-            <Tabs.TabPane key='local' tab='My computer'>
+            <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
                 <Upload.Dragger
                     multiple
                     listType='text'
@@ -233,6 +233,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         return (
             <Tabs.TabPane key='remote' tab='Remote sources'>
                 <Input.TextArea
+                    className='cvat-file-selector-remote'
                     placeholder='Enter one URL per line'
                     rows={6}
                     value={[...files.remote].join('\n')}
@@ -271,11 +272,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     <Divider>合并已经完成的Task的图片和标注</Divider>
                     <CheckboxGroup onChange={onChange}>
                         {choices.map((choice): JSX.Element => (
-                            <Tooltip title={choice.taskName}>
+                            <CVATTooltip title={choice.taskName}>
                                 <Checkbox value={choice.taskId}>
                                     <Text strong type='secondary'>{choice.taskId}</Text>
                                 </Checkbox>
-                            </Tooltip>
+                            </CVATTooltip>
                         ))}
                     </CheckboxGroup>
                 </div>

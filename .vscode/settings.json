@@ -19,6 +19,8 @@
             "!cwd": true
         }
     ],
+    "npm.exclude": "**/.env/**",
+    "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
     "python.testing.unittestEnabled": false,
     "licenser.license": "Custom",

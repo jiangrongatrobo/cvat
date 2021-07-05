@@ -47,3 +47,11 @@ yarn-error.log*
 /cvat-ui/webpack.config.rockrobo.js
 /rockrobo/migrate-legancy/tanosv/annotations
 /rockrobo/cli-rockrobo
+
+.idea/
+
+#Ignore helm-related files
+/helm-chart/Chart.lock
+/helm-chart/values.*.yaml
+/helm-chart/*.values.yaml
+/helm-chart/charts/*
