@@ -506,7 +506,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             ############## hacking for black-box ##############
             if include_images:
                 black_box_img = None
-                tgt_path = os.path.join(task_data.db_task.data.get_upload_dirname(), "with_black_box_"+dm_image.path)
+                tgt_path = os.path.join(task_data.db_task.data.get_upload_dirname()
+                , "with_black_box_"+os.path.basename(dm_image.path))
                 for each_anno in dm_anno:
                     if each_anno.label == black_box_id:
                         x1,y1 = int(each_anno.x), int(each_anno.y)
